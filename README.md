@@ -31,6 +31,8 @@
 1. **Node.js 설치** — [nodejs.org](https://nodejs.org)에서 LTS 버전 다운로드 후 기본값으로 설치. 터미널에서 `node -v`가 v20 이상이면 성공.
 2. **폰에 Expo Go 설치** — App Store / Play Store에서 "Expo Go" 검색 (무료).
 
+> **SDK 버전 안내:** 이 앱은 **Expo SDK 56** 기준입니다. Expo Go(스토어 앱)는 항상 최신 정식 SDK "하나"만 지원해요. 새 SDK가 갓 나오면 며칠~몇 주 동안 Expo Go가 아직 지원하지 않아서 `create-expo-app`으로 새로 만들면 오히려 "requires a newer version of Expo Go" 오류가 날 수 있어요. 그래서 스토어 Expo Go가 지원하는 SDK 56에 맞춰 두었습니다. 나중에 Expo Go가 더 최신 SDK를 지원하면 그때 올리면 됩니다.
+
 ### 앱 켜기
 
 ```bash
@@ -52,7 +54,7 @@ npx expo start
 | 증상 | 해결 |
 |---|---|
 | QR을 찍어도 연결이 안 됨 (회사/공용 Wi-Fi 등) | `Ctrl+C`로 끄고 `npx expo start --tunnel` (처음에 설치 질문이 나오면 `y`) |
-| "SDK version mismatch" | 폰의 Expo Go 앱을 스토어에서 업데이트 |
+| "Project is incompatible / requires a newer version of Expo Go" | 프로젝트 SDK가 폰의 Expo Go보다 최신이라는 뜻. 이 앱은 SDK 56이므로 Expo Go를 최신으로 업데이트하면 됩니다. (그래도 안 되면 터미널에 찍힌 "Expo Go가 지원하는 SDK 번호"를 알려주세요.) |
 | 데이터가 안 뜸 | 백엔드 GitHub Pages가 살아있는지 확인: 브라우저에서 위 피드 URL 열어보기 |
 
 ## 검증 스크립트 (기기 없이)
