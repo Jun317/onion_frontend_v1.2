@@ -31,7 +31,9 @@
 1. **Node.js 설치** — [nodejs.org](https://nodejs.org)에서 LTS 버전 다운로드 후 기본값으로 설치. 터미널에서 `node -v`가 v20 이상이면 성공.
 2. **폰에 Expo Go 설치** — App Store / Play Store에서 "Expo Go" 검색 (무료).
 
-> **SDK 버전 안내:** 이 앱은 **Expo SDK 56** 기준입니다. Expo Go(스토어 앱)는 항상 최신 정식 SDK "하나"만 지원해요. 새 SDK가 갓 나오면 며칠~몇 주 동안 Expo Go가 아직 지원하지 않아서 `create-expo-app`으로 새로 만들면 오히려 "requires a newer version of Expo Go" 오류가 날 수 있어요. 그래서 스토어 Expo Go가 지원하는 SDK 56에 맞춰 두었습니다. 나중에 Expo Go가 더 최신 SDK를 지원하면 그때 올리면 됩니다.
+> **SDK 버전 안내 (중요):** 이 앱은 **Expo SDK 54** 기준입니다. Expo Go 앱은 지원하는 SDK 버전이 정해져 있고, **프로젝트 SDK와 폰 Expo Go의 지원 SDK가 일치해야** 열려요. 이 프로젝트는 개발자 폰의 Expo Go가 지원하는 SDK 54에 맞춰 두었습니다.
+>
+> 내 Expo Go가 지원하는 SDK는 **Expo Go 앱 → Settings(설정)** 에서 확인할 수 있어요. 만약 54가 아닌 다른 숫자가 보이면 알려주세요 — 그 숫자에 맞춰 프로젝트를 조정하면 됩니다.
 
 ### 앱 켜기
 
@@ -54,7 +56,7 @@ npx expo start
 | 증상 | 해결 |
 |---|---|
 | QR을 찍어도 연결이 안 됨 (회사/공용 Wi-Fi 등) | `Ctrl+C`로 끄고 `npx expo start --tunnel` (처음에 설치 질문이 나오면 `y`) |
-| "Project is incompatible / requires a newer version of Expo Go" | 프로젝트 SDK가 폰의 Expo Go보다 최신이라는 뜻. 이 앱은 SDK 56이므로 Expo Go를 최신으로 업데이트하면 됩니다. (그래도 안 되면 터미널에 찍힌 "Expo Go가 지원하는 SDK 번호"를 알려주세요.) |
+| "Project is incompatible / requires a newer version of Expo Go" | 프로젝트 SDK가 폰의 Expo Go보다 최신이라는 뜻. 이 앱은 SDK 54예요. Expo Go 앱 설정에서 지원 SDK가 54가 맞는지 확인하고, 다르면 그 숫자를 알려주세요. (캐시 문제일 수도 있으니 `npx expo start -c` 로 한 번 지우고 다시 시도해 보세요.) |
 | 데이터가 안 뜸 | 백엔드 GitHub Pages가 살아있는지 확인: 브라우저에서 위 피드 URL 열어보기 |
 
 ## 검증 스크립트 (기기 없이)
