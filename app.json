@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "onionfrontendv12",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -25,12 +25,16 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#4a2586",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
       ]
     ],
+    "extra": {
+      "apiPrimaryBase": "https://jun317.github.io/onion_backend_v1.2/out",
+      "apiFallbackBase": "https://raw.githubusercontent.com/jun317/onion_backend_v1.2/main/out"
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

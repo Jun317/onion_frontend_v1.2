@@ -18,7 +18,7 @@ export default function IssueViewerScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string; sort?: string }>();
   const sort: SortKey = params.sort === 'latest' ? 'latest' : 'importance';
-  const { issues, loading, error, refresh } = useFeed(sort);
+  const { issues, loading, refresh } = useFeed(sort);
 
   const initialIndex = useMemo(
     () => issues.findIndex((i) => i.id === params.id),

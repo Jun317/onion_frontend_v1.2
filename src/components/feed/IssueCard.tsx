@@ -1,23 +1,25 @@
-import { Ionicons } from '@expo/vector-icons';
-import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CategoryBadge } from '@/components/common/CategoryBadge';
+import { DeltaPill } from '@/components/common/DeltaPill';
 import type { IssueCard as IssueCardType } from '@/data/types';
-import { spacing, typography, useTheme } from '@/theme';
+import { font, radius, spacing, typography, useTheme } from '@/theme';
 import { relativeTime } from '@/utils/format';
 
 interface Props {
   issue: IssueCardType;
-  rank: number; // 현재 정렬 기준에서의 순위 (0-base)
+  read: boolean;
   onPress: () => void;
 }
 
-/** 이슈 리스트 카드 — 제목 중심, stale 은 흐리게 */
-export const IssueCard = memo(function IssueCard({ issue, rank, onPress }: Props) {
+/**
+ * 이슈 리스트 카드 v2 — 제목 + (있을 때만) 핵심 숫자 + 델타 필.
+ * one_liner 는 카드에서 제거 (요약은 이슈 페이지에서). 우측 아이콘이 유일한 시각자료.
+ * 읽은 이슈는 카드 전체 딜링 — stale 포함 전부 평등 표시.
+ */
+export function IssueCard({ issue, read, onPress }: Props) {
   const { theme } = useTheme();
-  const isStale = issue.status === 'stale';
-  const isTop = rank < 3 && !isStale;
+  const stat = issue.headline_stat;
 
   return (
     <Pressable
@@ -25,39 +27,48 @@ export const IssueCard = memo(function IssueCard({ issue, rank, onPress }: Props
       style={({ pressed }) => [
         styles.card,
         { backgroundColor: theme.surface, borderColor: theme.border },
+        read && styles.read,
         pressed && styles.pressed,
-        isStale && styles.stale,
       ]}>
-      <View style={styles.topRow}>
-        <CategoryBadge category={issue.category} />
-        {isTop && <Text style={styles.fire}>🔥</Text>}
-        <View style={styles.spacer} />
-        {issue.has_visual && <Ionicons name="stats-chart" size={14} color={theme.textMuted} />}
-        <Text style={[styles.time, { color: theme.textMuted }]}>{relativeTime(issue.last_update)}</Text>
+      {/* 생성 시간 — 모든 카드에서 우상단 고정 */}
+      <Text style={[styles.time, { color: theme.textMuted }]}>{relativeTime(issue.last_update)}</Text>
+
+      <View style={styles.row}>
+        <View style={styles.content}>
+          <CategoryBadge category={issue.category} />
+          <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
+            {issue.title}
+          </Text>
+          {stat && (
+            <View style={styles.statRow}>
+              <Text style={[styles.statValue, { color: theme.text }]}>
+                {stat.value}
+                {stat.unit}
+              </Text>
+              {!!stat.delta_text && <DeltaPill text={stat.delta_text} direction={stat.direction} />}
+            </View>
+          )}
+        </View>
+        {!!issue.icon && <Text style={styles.icon}>{issue.icon}</Text>}
       </View>
-      <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
-        {issue.title}
-      </Text>
-      <Text style={[styles.oneLiner, { color: theme.textSecondary }]} numberOfLines={1}>
-        {issue.one_liner}
-      </Text>
     </Pressable>
   );
-});
+}
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    position: 'relative',
+    borderRadius: radius.card,
     borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
-    gap: spacing.sm,
   },
   pressed: { opacity: 0.7 },
-  stale: { opacity: 0.55 },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  fire: { fontSize: 13 },
-  spacer: { flex: 1 },
-  time: { ...typography.caption },
-  title: { ...typography.title },
-  oneLiner: { fontSize: 15, lineHeight: 22 },
+  read: { opacity: 0.45 },
+  time: { position: 'absolute', top: spacing.md, right: spacing.md, ...typography.caption },
+  row: { flexDirection: 'row', gap: spacing.sm },
+  content: { flex: 1, gap: spacing.sm },
+  title: { ...typography.cardTitle, paddingRight: spacing.xl },
+  statRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  statValue: { fontSize: 14, ...font(700), fontVariant: ['tabular-nums'] },
+  icon: { fontSize: 34, alignSelf: 'center', marginTop: 18 },
 });

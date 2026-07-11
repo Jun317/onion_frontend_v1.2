@@ -16,6 +16,18 @@ export type Category =
 
 export type IssueStatus = 'active' | 'stale';
 
+export type StatDirection = 'up' | 'down' | 'flat';
+
+/** 카드/히어로의 핵심 숫자 — 백엔드가 표기 문자열까지 완성한다 (프론트 계산 금지) */
+export interface HeadlineStat {
+  label: string; // "미국 기준금리" (entity + metric)
+  value: string; // "3.62"
+  unit: string; // "%"
+  delta_text: string | null; // "-0.13%p"
+  direction: StatDirection;
+  prev_text: string | null; // "직전 3.75%"
+}
+
 export interface IssueCard {
   id: string;
   title: string;
@@ -29,12 +41,40 @@ export interface IssueCard {
   importance: number;
   last_update: string; // ISO8601
   has_visual: boolean;
+  // v2 필드 — 백엔드 배포 전에도 동작하도록 전부 optional
+  headline_stat?: HeadlineStat | null;
+  spark?: number[] | null; // visual.series 의 v 만 5–8개
+  icon?: string | null; // 이슈 아이콘 이모지 1개
+}
+
+/** 스테디 상세 문단 내 이슈 참조 — phrase 는 text 에 반드시 포함 */
+export interface SteadyRef {
+  phrase: string;
+  issue_id: string;
+}
+
+export interface SteadyPara {
+  text: string;
+  refs?: SteadyRef[];
+}
+
+/** 스테디 이슈 — 복합 이슈라 category 없음 (steady.yaml 수동 큐레이션) */
+export interface SteadyItem {
+  id: string;
+  icon?: string | null;
+  title: string;
+  one_liner: string;
+  status_note?: string | null; // "1년째 지켜보는 중"
+  visual?: Visual | null;
+  detail: SteadyPara[];
 }
 
 export interface FeedIndex {
   generated_at: string;
   attribution: string;
   issues: IssueCard[];
+  schema_version?: number;
+  steady?: SteadyItem[];
 }
 
 export interface SeriesPoint {

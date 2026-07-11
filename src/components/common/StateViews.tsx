@@ -1,16 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { spacing, typography, useTheme } from '@/theme';
+import { copy } from '@/constants/copy';
+import { font, radius, spacing, typography, useTheme } from '@/theme';
 
 export function ErrorView({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   const { theme } = useTheme();
   return (
     <View style={styles.container}>
       <Text style={styles.emoji}>😵</Text>
-      <Text style={[styles.title, { color: theme.text }]}>{message ?? '불러오지 못했어요'}</Text>
-      <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-        인터넷 연결을 확인하고 다시 시도해 주세요
-      </Text>
+      <Text style={[styles.title, { color: theme.text }]}>{message ?? copy.errorTitle}</Text>
+      <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{copy.errorSubtitle}</Text>
       {onRetry && (
         <Pressable
           onPress={onRetry}
@@ -18,7 +17,7 @@ export function ErrorView({ message, onRetry }: { message?: string; onRetry?: ()
             styles.retryButton,
             { backgroundColor: theme.accent, opacity: pressed ? 0.7 : 1 },
           ]}>
-          <Text style={styles.retryText}>다시 시도</Text>
+          <Text style={[styles.retryText, { color: theme.onAccent }]}>{copy.retry}</Text>
         </Pressable>
       )}
     </View>
@@ -56,11 +55,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm },
   emoji: { fontSize: 44, marginBottom: spacing.xs },
   title: { ...typography.title, textAlign: 'center' },
-  subtitle: { ...typography.body, fontSize: 15, textAlign: 'center' },
-  retryButton: { marginTop: spacing.md, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 },
-  retryText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
+  subtitle: { ...typography.body, textAlign: 'center' },
+  retryButton: {
+    marginTop: spacing.md,
+    borderRadius: radius.control,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+  },
+  retryText: { fontSize: 16, ...font(700) },
   skeletonCard: {
-    borderRadius: 16,
+    borderRadius: radius.card,
     borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
     gap: spacing.sm,

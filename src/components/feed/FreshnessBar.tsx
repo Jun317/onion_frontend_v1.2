@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { copy } from '@/constants/copy';
 import { typography, useTheme } from '@/theme';
 import { relativeTime } from '@/utils/format';
 
@@ -9,9 +10,9 @@ export function FreshnessBar({ generatedAt, offline }: { generatedAt: string | n
   if (!generatedAt) return null;
   return (
     <View style={styles.row}>
-      <View style={[styles.dot, { backgroundColor: offline ? theme.textMuted : '#0ca30c' }]} />
+      <View style={[styles.dot, { backgroundColor: offline ? theme.textMuted : theme.success }]} />
       <Text style={[styles.text, { color: theme.textMuted }]}>
-        {offline ? '오프라인 — 저장된 소식이에요' : `${relativeTime(generatedAt)} 업데이트`}
+        {offline ? copy.freshnessOffline : copy.freshnessUpdated(relativeTime(generatedAt))}
       </Text>
     </View>
   );
