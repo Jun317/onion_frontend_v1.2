@@ -1,22 +1,43 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CategoryChip } from '@/components/common/CategoryChip';
 import { ErrorView, SkeletonCards } from '@/components/common/StateViews';
+import { Wordmark } from '@/components/common/Wordmark';
 import { FreshnessBar } from '@/components/feed/FreshnessBar';
 import { IssueCard } from '@/components/feed/IssueCard';
 import { SortToggle } from '@/components/feed/SortToggle';
-import type { SortKey } from '@/data/types';
+import { copy } from '@/constants/copy';
+import type { Category, SortKey } from '@/data/types';
 import { useFeed } from '@/data/useFeed';
-import { spacing, useTheme } from '@/theme';
+import { usePrefs } from '@/lib/store';
+import { allCategories, categoryLabel, spacing, useTheme } from '@/theme';
 
 export default function IssueListScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { isRead, interests } = usePrefs();
   const [sort, setSort] = useState<SortKey>('importance');
+  const [filter, setFilter] = useState<Category | null>(null);
   const { feed, issues, loading, refreshing, error, fromStaleCache, refresh } = useFeed(sort);
+
+  // 칩 = 전체 + 데이터에 존재하는 카테고리, 관심 분야가 앞으로
+  const categories = useMemo(() => {
+    const present = new Set(issues.map((i) => i.category));
+    const ordered = [
+      ...interests.filter((c) => present.has(c)),
+      ...allCategories.filter((c) => present.has(c) && !interests.includes(c)),
+    ];
+    return ordered;
+  }, [issues, interests]);
+
+  const visibleIssues = useMemo(
+    () => (filter ? issues.filter((i) => i.category === filter) : issues),
+    [issues, filter],
+  );
 
   const showError = error !== null && issues.length === 0;
 
@@ -24,10 +45,28 @@ export default function IssueListScreen() {
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={[styles.logo, { color: theme.text }]}>어니언</Text>
+          <Wordmark text="onion" />
           <FreshnessBar generatedAt={feed?.generated_at ?? null} offline={fromStaleCache || error !== null} />
         </View>
-        <SortToggle sort={sort} onChange={setSort} />
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chips}>
+          <CategoryChip label="전체" selected={filter === null} onPress={() => setFilter(null)} />
+          {categories.map((c) => (
+            <CategoryChip
+              key={c}
+              label={categoryLabel(c)}
+              selected={filter === c}
+              onPress={() => setFilter(filter === c ? null : c)}
+            />
+          ))}
+        </ScrollView>
+
+        <View style={styles.sortRow}>
+          <SortToggle sort={sort} onChange={setSort} />
+        </View>
       </View>
 
       {loading ? (
@@ -36,12 +75,12 @@ export default function IssueListScreen() {
         <ErrorView onRetry={refresh} />
       ) : (
         <FlatList
-          data={issues}
+          data={visibleIssues}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
+          renderItem={({ item }) => (
             <IssueCard
               issue={item}
-              rank={index}
+              read={isRead(item.id)}
               onPress={() => router.push({ pathname: '/issue/[id]', params: { id: item.id, sort } })}
             />
           )}
@@ -54,7 +93,8 @@ export default function IssueListScreen() {
             feed ? (
               <Text style={[styles.attribution, { color: theme.textMuted }]}>
                 {feed.attribution}
-                {'\n'}본 콘텐츠는 투자 판단의 근거가 아닙니다.
+                {'\n'}
+                {copy.disclaimer}
               </Text>
             ) : null
           }
@@ -66,9 +106,15 @@ export default function IssueListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: spacing.md },
-  headerTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  logo: { fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
+  header: { paddingBottom: spacing.sm, gap: spacing.sm },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+  },
+  chips: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.md },
+  sortRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.md },
   list: { padding: spacing.md, paddingBottom: spacing.xl },
   attribution: { fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: spacing.lg },
 });

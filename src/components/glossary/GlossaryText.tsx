@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Text, type StyleProp, type TextStyle } from 'react-native';
 
 import type { GlossaryEntry } from '@/data/types';
-import { useTheme } from '@/theme';
+import { font, useTheme } from '@/theme';
 
 import { useGlossary } from './GlossaryContext';
 import { splitByTerms } from './parse';
@@ -27,7 +27,7 @@ export function GlossaryText({ text, glossary, style, numberOfLines }: Props) {
           <Text
             key={i}
             suppressHighlighting
-            style={{ color: theme.accent, fontWeight: '700' }}
+            style={{ color: theme.accent, ...font(700) }}
             onPress={() => open(seg.entry!)}>
             {seg.text}
           </Text>

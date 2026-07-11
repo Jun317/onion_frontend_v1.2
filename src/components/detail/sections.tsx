@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { GlossaryText } from '@/components/glossary/GlossaryText';
+import { Card } from '@/components/common/Card';
 import { CategoryBadge } from '@/components/common/CategoryBadge';
+import { DeltaPill } from '@/components/common/DeltaPill';
+import { GlossaryText } from '@/components/glossary/GlossaryText';
+import { copy } from '@/constants/copy';
 import type {
   Anchor,
   GlossaryEntry,
@@ -10,7 +13,7 @@ import type {
   RelatedIssue,
   TimelineEntry,
 } from '@/data/types';
-import { spacing, typography, useTheme } from '@/theme';
+import { font, radius, spacing, typography, useTheme } from '@/theme';
 import { formatNumber, periodLabel, relativeTime } from '@/utils/format';
 
 function SectionTitle({ children }: { children: string }) {
@@ -18,16 +21,16 @@ function SectionTitle({ children }: { children: string }) {
   return <Text style={[styles.sectionTitle, { color: theme.text }]}>{children}</Text>;
 }
 
-/** 자세한 내용 — 쉬운 문장 불릿 */
+/** 무슨 일이에요? — 쉬운 문장 불릿 */
 export function DetailsSection({ details, glossary }: { details: string[]; glossary: GlossaryEntry[] }) {
   const { theme } = useTheme();
   if (details.length === 0) return null;
   return (
     <View style={styles.section}>
-      <SectionTitle>무슨 일이에요?</SectionTitle>
+      <SectionTitle>{copy.sectionDetails}</SectionTitle>
       {details.map((line, i) => (
         <View key={i} style={styles.bulletRow}>
-          <Text style={[styles.bullet, { color: theme.textMuted }]}>•</Text>
+          <Text style={[styles.bullet, { color: theme.textMuted }]}>·</Text>
           <GlossaryText text={line} glossary={glossary} style={[typography.body, { color: theme.text, flex: 1 }]} />
         </View>
       ))}
@@ -35,14 +38,14 @@ export function DetailsSection({ details, glossary }: { details: string[]; gloss
   );
 }
 
-/** 나에게 미치는 영향 */
+/** 그래서 어떻게 되나요? — 앱에서 유일한 보라 면 강조 */
 export function EffectsSection({ effects, glossary }: { effects: string[]; glossary: GlossaryEntry[] }) {
   const { theme } = useTheme();
   if (effects.length === 0) return null;
   return (
     <View style={styles.section}>
-      <SectionTitle>그래서 어떻게 되나요?</SectionTitle>
-      <View style={[styles.effectsBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+      <SectionTitle>{copy.sectionEffects}</SectionTitle>
+      <View style={[styles.effectsBox, { backgroundColor: theme.accentSoft }]}>
         {effects.map((line, i) => (
           <View key={i} style={styles.bulletRow}>
             <Text style={styles.effectEmoji}>👉</Text>
@@ -58,40 +61,40 @@ export function EffectsSection({ effects, glossary }: { effects: string[]; gloss
   );
 }
 
-/** 공식 수치 카드 — 값 + 이전값 대비 증감 */
+/** 숫자로 보면 — 공식 수치 행: 지표명/기간·출처 | 값 + 델타 필 */
 export function AnchorsSection({ anchors }: { anchors: Anchor[] }) {
   const { theme } = useTheme();
   if (anchors.length === 0) return null;
   return (
     <View style={styles.section}>
-      <SectionTitle>숫자로 보면</SectionTitle>
-      <View style={styles.anchorGrid}>
+      <SectionTitle>{copy.sectionAnchors}</SectionTitle>
+      <Card style={styles.anchorCard}>
         {anchors.map((a, i) => {
           const delta = a.prev != null ? a.value - a.prev : null;
-          const deltaColor = delta == null ? theme.textMuted : delta > 0 ? theme.up : delta < 0 ? theme.down : theme.textMuted;
+          const direction = delta == null || delta === 0 ? 'flat' : delta > 0 ? 'up' : 'down';
           return (
-            <View key={i} style={[styles.anchorCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Text style={[styles.anchorMetric, { color: theme.textSecondary }]} numberOfLines={1}>
-                {a.entity} {a.metric}
-              </Text>
-              <Text style={[styles.anchorValue, { color: theme.text }]}>
-                {formatNumber(a.value)}
-                {a.unit}
-              </Text>
-              {delta != null && (
-                <Text style={[styles.anchorDelta, { color: deltaColor }]}>
-                  {delta > 0 ? '▲' : delta < 0 ? '▼' : '—'} {formatNumber(Math.abs(delta))}
-                  {a.unit} (이전 {formatNumber(a.prev!)}
-                  {a.unit})
+            <View key={i} style={[styles.anchorRow, i > 0 && { borderTopColor: theme.hairline, borderTopWidth: StyleSheet.hairlineWidth }]}>
+              <View style={styles.anchorInfo}>
+                <Text style={[styles.anchorMetric, { color: theme.text }]} numberOfLines={1}>
+                  {a.entity} {a.metric}
                 </Text>
-              )}
-              <Text style={[styles.anchorPeriod, { color: theme.textMuted }]}>
-                {periodLabel(a.period)} · {a.source}
-              </Text>
+                <Text style={[styles.anchorMeta, { color: theme.textMuted }]} numberOfLines={1}>
+                  {periodLabel(a.period)} · {a.source}
+                </Text>
+              </View>
+              <View style={styles.anchorValueCol}>
+                <Text style={[styles.anchorValue, { color: theme.text }]}>
+                  {formatNumber(a.value)}
+                  {a.unit}
+                </Text>
+                {delta != null && delta !== 0 && (
+                  <DeltaPill text={`${formatNumber(Math.abs(delta))}${a.unit}`} direction={direction} />
+                )}
+              </View>
             </View>
           );
         })}
-      </View>
+      </Card>
     </View>
   );
 }
@@ -101,23 +104,23 @@ async function openUrl(url: string) {
     await Linking.openURL(url);
   } catch {
     // 백엔드에 backfill.example 같은 더미 URL 이 실존한다
-    Alert.alert('열 수 없는 링크예요', '원문 주소가 유효하지 않아요.');
+    Alert.alert(copy.invalidLinkTitle, copy.invalidLinkBody);
   }
 }
 
-/** 흐름 타임라인 — 공식 발표(🏛)와 언론 보도(📰) */
+/** 지금까지 흐름 — 공식 발표(🏛)와 언론 보도(📰) */
 export function TimelineSection({ timeline }: { timeline: TimelineEntry[] }) {
   const { theme } = useTheme();
   if (timeline.length === 0) return null;
   return (
     <View style={styles.section}>
-      <SectionTitle>지금까지 흐름</SectionTitle>
-      <View style={[styles.timelineBox, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+      <SectionTitle>{copy.sectionTimeline}</SectionTitle>
+      <Card style={styles.timelineBox}>
         {timeline.map((entry, i) => (
           <Pressable
             key={i}
             onPress={() => openUrl(entry.url)}
-            style={({ pressed }) => [styles.timelineRow, pressed && { opacity: 0.6 }]}>
+            style={({ pressed }) => [styles.timelineRow, pressed && { opacity: 0.7 }]}>
             <Text style={styles.timelineIcon}>{entry.kind === 'official' ? '🏛' : '📰'}</Text>
             <View style={styles.timelineBody}>
               <Text style={[styles.timelineTitle, { color: theme.text }]} numberOfLines={2}>
@@ -129,18 +132,18 @@ export function TimelineSection({ timeline }: { timeline: TimelineEntry[] }) {
             </View>
           </Pressable>
         ))}
-      </View>
+      </Card>
     </View>
   );
 }
 
-/** 관련 기사 원문 링크 */
+/** 실제 기사로 보기 — 원문 링크 행 */
 export function HeadlinesSection({ headlines }: { headlines: Headline[] }) {
   const { theme } = useTheme();
   if (headlines.length === 0) return null;
   return (
     <View style={styles.section}>
-      <SectionTitle>원문 기사</SectionTitle>
+      <SectionTitle>{copy.sectionHeadlines}</SectionTitle>
       {headlines.map((h, i) => (
         <Pressable
           key={i}
@@ -148,7 +151,7 @@ export function HeadlinesSection({ headlines }: { headlines: Headline[] }) {
           style={({ pressed }) => [
             styles.headlineRow,
             { backgroundColor: theme.surface, borderColor: theme.border },
-            pressed && { opacity: 0.6 },
+            pressed && { opacity: 0.7 },
           ]}>
           <View style={styles.timelineBody}>
             <Text style={[styles.timelineTitle, { color: theme.text }]} numberOfLines={2}>
@@ -163,7 +166,7 @@ export function HeadlinesSection({ headlines }: { headlines: Headline[] }) {
   );
 }
 
-/** 관련 이슈 칩 */
+/** 같이 보면 좋아요 — 관련 이슈 (탭하면 뷰어 전환) */
 export function RelatedSection({
   related,
   onPressIssue,
@@ -175,7 +178,7 @@ export function RelatedSection({
   if (related.length === 0) return null;
   return (
     <View style={styles.section}>
-      <SectionTitle>같이 보면 좋아요</SectionTitle>
+      <SectionTitle>{copy.sectionRelated}</SectionTitle>
       <View style={styles.relatedWrap}>
         {related.map((r) => (
           <Pressable
@@ -184,7 +187,7 @@ export function RelatedSection({
             style={({ pressed }) => [
               styles.relatedChip,
               { backgroundColor: theme.surface, borderColor: theme.border },
-              pressed && { opacity: 0.6 },
+              pressed && { opacity: 0.7 },
             ]}>
             <CategoryBadge category={r.category} />
             <Text style={[styles.relatedTitle, { color: theme.text }]} numberOfLines={1}>
@@ -199,53 +202,48 @@ export function RelatedSection({
 
 const styles = StyleSheet.create({
   section: { gap: spacing.sm },
-  sectionTitle: { fontSize: 17, fontWeight: '800', marginBottom: 2 },
+  sectionTitle: { fontSize: 17, ...font(800), marginBottom: 2 },
   bulletRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   bullet: { ...typography.body },
   effectsBox: {
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.card,
     padding: spacing.md,
     gap: spacing.sm,
   },
-  effectEmoji: { fontSize: 16, lineHeight: 27 },
-  anchorGrid: { gap: spacing.sm },
-  anchorCard: {
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: spacing.md,
-    gap: 2,
-  },
-  anchorMetric: { fontSize: 13, fontWeight: '600' },
-  anchorValue: { fontSize: 26, fontWeight: '800' },
-  anchorDelta: { fontSize: 13, fontWeight: '600' },
-  anchorPeriod: { ...typography.caption },
-  timelineBox: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 4 },
-  timelineRow: {
+  effectEmoji: { fontSize: 15, lineHeight: 23 },
+  anchorCard: { paddingVertical: spacing.xs, gap: 0 },
+  anchorRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.md,
     paddingVertical: 10,
   },
+  anchorInfo: { flex: 1, gap: 2 },
+  anchorMetric: { fontSize: 14, ...font(600) },
+  anchorMeta: { ...typography.micro },
+  anchorValueCol: { alignItems: 'flex-end', gap: spacing.xs },
+  anchorValue: { fontSize: 18, ...font(800), fontVariant: ['tabular-nums'] },
+  timelineBox: { paddingVertical: spacing.xs, paddingHorizontal: spacing.md },
+  timelineRow: { flexDirection: 'row', gap: spacing.sm, paddingVertical: 10 },
   timelineIcon: { fontSize: 15 },
   timelineBody: { flex: 1, gap: 2 },
-  timelineTitle: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  timelineTitle: { fontSize: 14, lineHeight: 20, ...font(500) },
   timelineMeta: { ...typography.caption },
   headlineRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    borderRadius: 12,
+    borderRadius: radius.control,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
   },
   relatedWrap: { gap: spacing.sm },
   relatedChip: {
-    borderRadius: 12,
+    borderRadius: radius.control,
     borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
     gap: 6,
   },
-  relatedTitle: { fontSize: 14, fontWeight: '600' },
+  relatedTitle: { fontSize: 14, ...font(600) },
 });

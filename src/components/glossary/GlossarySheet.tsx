@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { GlossaryEntry } from '@/data/types';
-import { spacing, typography, useTheme } from '@/theme';
+import { font, motion, radius, spacing, typography, useTheme } from '@/theme';
 
 interface Props {
   entry: GlossaryEntry | null;
@@ -17,7 +17,7 @@ export function GlossarySheet({ entry, onClose }: Props) {
   useEffect(() => {
     if (entry) {
       slide.setValue(0);
-      Animated.timing(slide, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      Animated.timing(slide, { toValue: 1, duration: motion.sheet, useNativeDriver: true }).start();
     }
   }, [entry, slide]);
 
@@ -61,8 +61,8 @@ export function GlossarySheet({ entry, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
@@ -70,10 +70,10 @@ const styles = StyleSheet.create({
   },
   grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: spacing.md },
   term: { ...typography.title, marginBottom: spacing.sm },
-  easy: { ...typography.body, marginBottom: spacing.md },
-  exampleBox: { borderRadius: 12, padding: spacing.md, marginBottom: spacing.md },
+  easy: { ...typography.body, fontSize: 16, lineHeight: 25, marginBottom: spacing.md },
+  exampleBox: { borderRadius: radius.control, padding: spacing.md, marginBottom: spacing.md },
   exampleLabel: { ...typography.caption, marginBottom: spacing.xs },
-  exampleText: { fontSize: 15, lineHeight: 23 },
-  closeButton: { borderRadius: 12, alignItems: 'center', paddingVertical: 12 },
-  closeText: { fontSize: 16, fontWeight: '600' },
+  exampleText: { ...typography.body },
+  closeButton: { borderRadius: radius.control, alignItems: 'center', paddingVertical: 12 },
+  closeText: { fontSize: 16, ...font(600) },
 });

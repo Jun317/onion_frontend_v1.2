@@ -40,6 +40,33 @@ for (const c of feed.issues) {
   assert(typeof c.id === 'string' && c.id.length > 0, `card id (${c.id})`);
   assert(typeof c.title === 'string', `title (${c.id})`);
   assert(typeof c.importance === 'number', `importance (${c.id})`);
+  // v2 optional 필드 — 있으면 형태 검증
+  if (c.headline_stat != null) {
+    assert(typeof c.headline_stat.value === 'string', `headline_stat.value (${c.id})`);
+    assert(typeof c.headline_stat.unit === 'string', `headline_stat.unit (${c.id})`);
+    assert(['up', 'down', 'flat'].includes(c.headline_stat.direction), `headline_stat.direction (${c.id})`);
+  }
+  if (c.spark != null) {
+    assert(Array.isArray(c.spark) && c.spark.every((v) => typeof v === 'number'), `spark[] (${c.id})`);
+    assert(c.spark.length >= 2 && c.spark.length <= 8, `spark length 2–8 (${c.id})`);
+  }
+  if (c.icon != null) assert(typeof c.icon === 'string' && c.icon.length > 0, `icon (${c.id})`);
+}
+// v2 steady — 있으면 형태·참조 계약 검증 (refs.phrase 는 text 에 포함)
+if (feed.steady != null) {
+  assert(Array.isArray(feed.steady), 'steady[]');
+  for (const s of feed.steady) {
+    assert(typeof s.id === 'string' && s.id.length > 0, `steady id (${s.id})`);
+    assert(typeof s.title === 'string' && typeof s.one_liner === 'string', `steady text (${s.id})`);
+    assert(Array.isArray(s.detail), `steady detail[] (${s.id})`);
+    for (const para of s.detail) {
+      assert(typeof para.text === 'string', `steady para text (${s.id})`);
+      for (const ref of para.refs ?? []) {
+        assert(para.text.includes(ref.phrase), `steady ref phrase in text (${s.id}: ${ref.phrase})`);
+      }
+    }
+  }
+  console.log(`steady: ${feed.steady.length} items ok`);
 }
 console.log(`feed: ${feed.issues.length} issues, generated ${relativeTime(feed.generated_at)}`);
 
