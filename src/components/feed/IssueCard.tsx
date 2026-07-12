@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CategoryBadge } from '@/components/common/CategoryBadge';
@@ -9,21 +10,22 @@ import { relativeTime } from '@/utils/format';
 interface Props {
   issue: IssueCardType;
   read: boolean;
-  onPress: () => void;
+  onPressIssue: (id: string) => void; // 안정 콜백 — memo 유지를 위해 id 기반
 }
 
 /**
  * 이슈 리스트 카드 v2 — 제목 + (있을 때만) 핵심 숫자 + 델타 필.
  * one_liner 는 카드에서 제거 (요약은 이슈 페이지에서). 우측 아이콘이 유일한 시각자료.
  * 읽은 이슈는 카드 전체 딜링 — stale 포함 전부 평등 표시.
+ * memo: 읽음 기록 갱신 때 리스트 전체가 다시 그려지지 않게 (프리즈 예방).
  */
-export function IssueCard({ issue, read, onPress }: Props) {
+export const IssueCard = memo(function IssueCard({ issue, read, onPressIssue }: Props) {
   const { theme } = useTheme();
   const stat = issue.headline_stat;
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onPressIssue(issue.id)}
       style={({ pressed }) => [
         styles.card,
         { backgroundColor: theme.surface, borderColor: theme.border },
@@ -53,7 +55,7 @@ export function IssueCard({ issue, read, onPress }: Props) {
       </View>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

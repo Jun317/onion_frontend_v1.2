@@ -9,7 +9,7 @@ import { Wordmark } from '@/components/common/Wordmark';
 import { copy } from '@/constants/copy';
 import { useFeed } from '@/data/useFeed';
 import { usePrefs } from '@/lib/store';
-import { allCategories, categoryLabel, font, spacing, typography, useTheme } from '@/theme';
+import { allCategories, categoryColor, categoryLabel, font, spacing, typography, useTheme } from '@/theme';
 
 /** 마이 — 관심 분야 선택 + 읽은 이슈 (그 외 설정 없음) */
 export default function MyScreen() {
@@ -35,6 +35,7 @@ export default function MyScreen() {
               <CategoryChip
                 key={c}
                 label={categoryLabel(c)}
+                color={categoryColor(c)}
                 selected={interests.includes(c)}
                 onPress={() => toggleInterest(c)}
               />

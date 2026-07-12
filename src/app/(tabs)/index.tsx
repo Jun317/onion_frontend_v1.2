@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +13,7 @@ import { copy } from '@/constants/copy';
 import type { Category, SortKey } from '@/data/types';
 import { useFeed } from '@/data/useFeed';
 import { usePrefs } from '@/lib/store';
-import { allCategories, categoryLabel, spacing, useTheme } from '@/theme';
+import { allCategories, categoryColor, categoryLabel, spacing, useTheme } from '@/theme';
 
 export default function IssueListScreen() {
   const { theme } = useTheme();
@@ -39,6 +39,12 @@ export default function IssueListScreen() {
     [issues, filter],
   );
 
+  // 카드 memo 유지를 위한 안정 콜백 — 읽음 갱신 시 전체 리스트 리렌더 방지
+  const openIssue = useCallback(
+    (id: string) => router.push({ pathname: '/issue/[id]', params: { id, sort } }),
+    [router, sort],
+  );
+
   const showError = error !== null && issues.length === 0;
 
   return (
@@ -58,6 +64,7 @@ export default function IssueListScreen() {
             <CategoryChip
               key={c}
               label={categoryLabel(c)}
+              color={categoryColor(c)}
               selected={filter === c}
               onPress={() => setFilter(filter === c ? null : c)}
             />
@@ -78,11 +85,7 @@ export default function IssueListScreen() {
           data={visibleIssues}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <IssueCard
-              issue={item}
-              read={isRead(item.id)}
-              onPress={() => router.push({ pathname: '/issue/[id]', params: { id: item.id, sort } })}
-            />
+            <IssueCard issue={item} read={isRead(item.id)} onPressIssue={openIssue} />
           )}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}

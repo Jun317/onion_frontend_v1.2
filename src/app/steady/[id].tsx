@@ -95,11 +95,15 @@ export default function SteadyViewerScreen() {
             )}
           </ScrollView>
 
-          {/* ② 상세 설명 */}
+          {/* ② 상세 설명 (목업 2: 작은 제목 + "자세히 볼게요" 헤더 + 링크 안내) */}
           <ScrollView
             style={{ width: size.width }}
             contentContainerStyle={[styles.page, { paddingTop: insets.top + 56 }]}
             showsVerticalScrollIndicator={false}>
+            <Text style={[styles.detailKicker, { color: theme.textSecondary }]} numberOfLines={1}>
+              {item.title}
+            </Text>
+            <Text style={[styles.detailHeader, { color: theme.text }]}>{copy.steadyDetailHeader}</Text>
             {item.detail.map((para, i) => (
               <Card key={i}>
                 <LinkedText
@@ -110,6 +114,7 @@ export default function SteadyViewerScreen() {
                 />
               </Card>
             ))}
+            <Text style={[styles.refHint, { color: theme.textMuted }]}>{copy.steadyRefHint}</Text>
             <Text style={[styles.disclaimer, { color: theme.textMuted }]}>{copy.disclaimer}</Text>
           </ScrollView>
         </ScrollView>
@@ -166,6 +171,9 @@ const styles = StyleSheet.create({
   statusNote: { fontSize: 13, ...font(700) },
   title: { ...typography.viewerTitle },
   oneLiner: { fontSize: 16, lineHeight: 25, ...font(400) },
+  detailKicker: { fontSize: 15, ...font(600) },
+  detailHeader: { fontSize: 20, ...font(800), marginTop: -spacing.sm },
+  refHint: { ...typography.caption, textAlign: 'center' },
   disclaimer: { fontSize: 11, textAlign: 'center', marginTop: spacing.sm },
   topOverlay: {
     position: 'absolute',

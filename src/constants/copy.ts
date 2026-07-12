@@ -11,9 +11,9 @@ export const copy = {
 
   // 뷰어
   whyNow: '왜 중요할까요?',
-  learnMore: '더 알아보기',
-  pagerPosition: (n: number, total: number) => `${n} / ${total} · 위로 넘기면 다음 이슈`,
+  swipeDetailHint: '옆으로 넘기면 자세한 내용',
   viewerHintLine: '↕ 위아래로 넘기면 다음 이슈',
+  viewerHintLine2: '→ 옆으로 넘기면 자세한 내용',
   viewerHintDismiss: '탭해서 시작하기',
 
   // 더 알아보기 시트 섹션
@@ -29,6 +29,8 @@ export const copy = {
   steadyEmptyTitle: '준비 중이에요',
   steadyEmptySubtitle: '오래 두고 볼 큰 이슈들을 모으고 있어요.\n다음 업데이트에서 만나요!',
   steadyHint: '옆으로 넘기면 자세한 설명',
+  steadyDetailHeader: '자세히 볼게요',
+  steadyRefHint: '밑줄 친 이슈를 누르면 해당 이슈 페이지로 이동해요.',
 
   // 마이
   myInterests: '관심 분야',

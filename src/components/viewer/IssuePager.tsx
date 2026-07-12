@@ -3,23 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, type ViewToken } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { copy } from '@/constants/copy';
 import { cacheKeys, readCache, writeCache } from '@/data/cache';
 import type { IssueCard } from '@/data/types';
 import { usePrefs } from '@/lib/store';
-import { copy } from '@/constants/copy';
 import { font, radius, spacing, useTheme } from '@/theme';
 
 import { IssuePage } from './IssuePage';
 
-interface Props {
-  issues: IssueCard[];
-  initialIndex: number;
-  onClose: () => void;
-  onPressRelated: (id: string) => void;
-}
-
-/** ↑↓ 보조 버튼 연타 방지 쿨다운 (ms) */
-const NAV_COOLDOWN_MS = 550;
 /** 이슈 수가 이보다 많으면 세그먼트 대신 연속 진행 바로 폴백 */
 const MAX_SEGMENTS = 20;
 
@@ -57,17 +48,23 @@ function ProgressSegments({ active, total }: { active: number; total: number }) 
   );
 }
 
+interface Props {
+  issues: IssueCard[];
+  initialIndex: number;
+  onClose: () => void;
+  onPressRelated: (id: string) => void;
+}
+
 /**
- * 숏폼식 세로 페이저 — 제스처 축은 세로 하나 (위/아래 = 이전/다음 이슈).
- * 더 알아보기 시트가 열려 있는 동안은 세로 스크롤 잠금 (제스처 충돌 방지).
- * 페이지에 들어온 이슈는 읽음 처리한다.
+ * 숏폼식 세로 페이저.
+ * - 위/아래 스와이프 = 이전/다음 이슈 (한 화면 = 한 이슈)
+ * - 자세한 내용 페인이 열려 있는 동안은 세로 스크롤 잠금 (제스처 충돌 방지)
+ * - 페이지에 들어온 이슈는 읽음 처리
  */
 export function IssuePager({ issues, initialIndex, onClose, onPressRelated }: Props) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { markRead } = usePrefs();
-  const listRef = useRef<FlatList<IssueCard>>(null);
-  const lastNavAt = useRef(0);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [verticalLocked, setVerticalLocked] = useState(false);
@@ -91,22 +88,6 @@ export function IssuePager({ issues, initialIndex, onClose, onPressRelated }: Pr
     writeCache(cacheKeys.hintSeen, true);
   }, []);
 
-  const scrollTo = useCallback(
-    (index: number) => {
-      const now = Date.now();
-      if (now - lastNavAt.current < NAV_COOLDOWN_MS) return;
-      lastNavAt.current = now;
-      listRef.current?.scrollToIndex({ index, animated: true });
-    },
-    [],
-  );
-  const goPrev = useCallback(() => {
-    if (activeIndex > 0) scrollTo(activeIndex - 1);
-  }, [activeIndex, scrollTo]);
-  const goNext = useCallback(() => {
-    if (activeIndex < issues.length - 1) scrollTo(activeIndex + 1);
-  }, [activeIndex, issues.length, scrollTo]);
-
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       const first = viewableItems.find((v) => v.isViewable);
@@ -121,7 +102,6 @@ export function IssuePager({ issues, initialIndex, onClose, onPressRelated }: Pr
       onLayout={(e) => setSize(e.nativeEvent.layout)}>
       {size && (
         <FlatList
-          ref={listRef}
           data={issues}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
@@ -131,10 +111,6 @@ export function IssuePager({ issues, initialIndex, onClose, onPressRelated }: Pr
                 isActive={Math.abs(index - activeIndex) <= 1}
                 width={size.width}
                 height={size.height - insets.top}
-                index={index}
-                total={issues.length}
-                onPrev={goPrev}
-                onNext={goNext}
                 onDetailOpenChange={setVerticalLocked}
                 onPressRelated={onPressRelated}
               />
@@ -175,6 +151,7 @@ export function IssuePager({ issues, initialIndex, onClose, onPressRelated }: Pr
         <Pressable style={[styles.hintOverlay, { backgroundColor: theme.overlay }]} onPress={dismissHint}>
           <View style={[styles.hintCard, { backgroundColor: theme.surface }]}>
             <Text style={[styles.hintLine, { color: theme.text }]}>{copy.viewerHintLine}</Text>
+            <Text style={[styles.hintLine, { color: theme.text }]}>{copy.viewerHintLine2}</Text>
             <Text style={[styles.hintDismiss, { color: theme.textMuted }]}>{copy.viewerHintDismiss}</Text>
           </View>
         </Pressable>

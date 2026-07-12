@@ -44,8 +44,9 @@ export default function SteadyScreen() {
                 { backgroundColor: theme.surface, borderColor: theme.border },
                 pressed && { opacity: 0.7 },
               ]}>
+              {/* 아이콘은 카드 우상단 고정 (목업 4) */}
+              {!!item.icon && <Text style={styles.cardIcon}>{item.icon}</Text>}
               <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
-                {item.icon ? `${item.icon} ` : ''}
                 {item.title}
               </Text>
               {item.visual ? (
@@ -70,13 +71,15 @@ const styles = StyleSheet.create({
   subtitle: { ...typography.caption },
   list: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
   card: {
+    position: 'relative',
     minHeight: 232, // 일반 카드 높이의 약 2배
     borderRadius: radius.card,
     borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
     gap: spacing.md,
   },
-  cardTitle: { fontSize: 19, ...font(800), lineHeight: 26 },
+  cardIcon: { position: 'absolute', top: spacing.md, right: spacing.md, fontSize: 28 },
+  cardTitle: { fontSize: 19, ...font(800), lineHeight: 26, paddingRight: 40 },
   placeholder: {
     flex: 1,
     borderRadius: radius.control,
