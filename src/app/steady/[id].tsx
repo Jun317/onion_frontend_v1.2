@@ -16,9 +16,11 @@ import { Card } from '@/components/common/Card';
 import { MiniChart } from '@/components/common/MiniChart';
 import { ErrorView } from '@/components/common/StateViews';
 import { LinkedText } from '@/components/steady/LinkedText';
+import { SteadyTable } from '@/components/steady/SteadyTable';
 import { copy } from '@/constants/copy';
 import { useFeed } from '@/data/useFeed';
 import { font, radius, spacing, tint, typography, useTheme } from '@/theme';
+import { relativeTime } from '@/utils/format';
 
 /**
  * 스테디 전용 페이지 — 배경 accent 6% 틴트, 가로 2페이지 (① 개요 ↔ ② 상세 설명).
@@ -75,7 +77,7 @@ export default function SteadyViewerScreen() {
           bounces={false}
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={onMomentumEnd}>
-          {/* ① 개요 */}
+          {/* ① 개요 — 핵심 한줄 · 가장 최근 소식 · 경제 영향 · 핵심 수치 표 */}
           <ScrollView
             style={{ width: size.width }}
             contentContainerStyle={[styles.page, { paddingTop: insets.top + 56 }]}
@@ -88,6 +90,50 @@ export default function SteadyViewerScreen() {
               {item.title}
             </Text>
             <Text style={[styles.oneLiner, { color: theme.textSecondary }]}>{item.one_liner}</Text>
+
+            {/* 가장 최근 핵심 이슈 — 탭하면 해당 이슈 뷰어로 */}
+            {item.latest_issue && (
+              <Pressable
+                onPress={() => openIssue(item.latest_issue!.id)}
+                style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+                <Card style={styles.latestCard}>
+                  {!!item.latest_issue.icon && (
+                    <Text style={styles.latestIcon}>{item.latest_issue.icon}</Text>
+                  )}
+                  <View style={styles.latestBody}>
+                    <Text style={[styles.latestLabel, { color: theme.accent }]}>
+                      {copy.steadyLatest}
+                    </Text>
+                    <Text style={[styles.latestTitle, { color: theme.text }]} numberOfLines={2}>
+                      {item.latest_issue.title}
+                    </Text>
+                    <Text style={[styles.latestTime, { color: theme.textMuted }]}>
+                      {relativeTime(item.latest_issue.last_update)}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+                </Card>
+              </Pressable>
+            )}
+
+            {/* 경제 영향 — 주식·채권·물가·금리 */}
+            {(item.impact?.length ?? 0) > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>{copy.steadyImpact}</Text>
+                <View style={[styles.impactBox, { backgroundColor: theme.accentSoft }]}>
+                  {item.impact!.map((line, i) => (
+                    <View key={i} style={styles.impactRow}>
+                      <Text style={styles.impactEmoji}>👉</Text>
+                      <Text style={[typography.body, { color: theme.text, flex: 1 }]}>{line}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* 핵심 수치 표 */}
+            {item.table && <SteadyTable table={item.table} />}
+
             {item.visual && (
               <Card>
                 <MiniChart visual={item.visual} width={size.width - spacing.md * 4} />
@@ -171,6 +217,17 @@ const styles = StyleSheet.create({
   statusNote: { fontSize: 13, ...font(700) },
   title: { ...typography.viewerTitle },
   oneLiner: { fontSize: 16, lineHeight: 25, ...font(400) },
+  latestCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  latestIcon: { fontSize: 26 },
+  latestBody: { flex: 1, gap: 2 },
+  latestLabel: { fontSize: 12, ...font(700) },
+  latestTitle: { fontSize: 15, ...font(700), lineHeight: 21 },
+  latestTime: { ...typography.caption },
+  section: { gap: spacing.sm },
+  sectionTitle: { fontSize: 17, ...font(800) },
+  impactBox: { borderRadius: radius.card, padding: spacing.md, gap: spacing.sm },
+  impactRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
+  impactEmoji: { fontSize: 15, lineHeight: 23 },
   detailKicker: { fontSize: 15, ...font(600) },
   detailHeader: { fontSize: 20, ...font(800), marginTop: -spacing.sm },
   refHint: { ...typography.caption, textAlign: 'center' },

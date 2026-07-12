@@ -31,6 +31,8 @@ export const copy = {
   steadyHint: '옆으로 넘기면 자세한 설명',
   steadyDetailHeader: '자세히 볼게요',
   steadyRefHint: '밑줄 친 이슈를 누르면 해당 이슈 페이지로 이동해요.',
+  steadyLatest: '가장 최근 소식',
+  steadyImpact: '경제에 어떤 영향이 있나요?',
 
   // 마이
   myInterests: '관심 분야',

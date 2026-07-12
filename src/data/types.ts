@@ -58,6 +58,23 @@ export interface SteadyPara {
   refs?: SteadyRef[];
 }
 
+/** 주제의 가장 최근 핵심 이슈 — 백엔드 latest_match 규칙이 자동 해석 */
+export interface SteadyLatestIssue {
+  id: string;
+  title: string;
+  one_liner: string;
+  icon?: string | null;
+  last_update: string;
+}
+
+/** 핵심 수치 표 — 예: 미국 진영 vs 이란 진영 비교. 수치엔 출처 필수 */
+export interface SteadyTableData {
+  title: string;
+  columns: string[];
+  rows: string[][];
+  source: string;
+}
+
 /** 스테디 이슈 — 복합 이슈라 category 없음 (steady.yaml 수동 큐레이션) */
 export interface SteadyItem {
   id: string;
@@ -66,6 +83,10 @@ export interface SteadyItem {
   one_liner: string;
   status_note?: string | null; // "1년째 지켜보는 중"
   visual?: Visual | null;
+  // v2.3 — 첫 페이지 구성 요소 (전부 optional)
+  latest_issue?: SteadyLatestIssue | null;
+  impact?: string[]; // 경제(주식·채권·물가·금리) 영향
+  table?: SteadyTableData | null;
   detail: SteadyPara[];
 }
 

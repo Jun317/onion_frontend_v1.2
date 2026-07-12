@@ -65,6 +65,24 @@ if (feed.steady != null) {
         assert(para.text.includes(ref.phrase), `steady ref phrase in text (${s.id}: ${ref.phrase})`);
       }
     }
+    // v2.3 첫 페이지 필드 — 있으면 형태 검증
+    if (s.latest_issue != null) {
+      assert(typeof s.latest_issue.id === 'string' && typeof s.latest_issue.title === 'string',
+        `steady latest_issue (${s.id})`);
+      assert(typeof s.latest_issue.last_update === 'string', `steady latest_issue time (${s.id})`);
+    }
+    if (s.impact != null) {
+      assert(Array.isArray(s.impact) && s.impact.every((t) => typeof t === 'string'),
+        `steady impact[] (${s.id})`);
+    }
+    if (s.table != null) {
+      assert(Array.isArray(s.table.columns) && s.table.columns.length > 0, `steady table columns (${s.id})`);
+      for (const row of s.table.rows) {
+        assert(row.length === s.table.columns.length, `steady table row width (${s.id})`);
+      }
+      assert(typeof s.table.source === 'string' && s.table.source.length > 0,
+        `steady table source (${s.id})`); // 수치 출처 필수
+    }
   }
   console.log(`steady: ${feed.steady.length} items ok`);
 }
