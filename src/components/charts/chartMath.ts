@@ -83,6 +83,59 @@ export function sampleIndices(count: number, target = 4): number[] {
   return [...new Set(out)];
 }
 
+/** SvgText fontSize 11 기준 라벨 폭 추정(px) — 한글 ≈ fontSize, 숫자·기호 ≈ 0.62배 */
+export function estimateLabelWidth(label: string, fontSize = 11): number {
+  let w = 0;
+  for (const ch of label) {
+    w += ch >= 'ᄀ' ? fontSize : fontSize * 0.62; // CJK 전각 vs 반각
+  }
+  return w;
+}
+
+/**
+ * 충돌 회피 x축 라벨 샘플링 — 균등 샘플 후, 이웃 라벨과 겹치는 인덱스를 버린다.
+ * (실측: "2026-04-1230026-05-13" 처럼 겹쳐 렌더되던 결함의 재발 방지)
+ * 처음/끝 라벨은 항상 유지하고, 중간 라벨만 추정 폭 + 최소 간격으로 검사한다.
+ */
+export function sampleLabelIndices(
+  labels: string[],
+  plot: Rect,
+  target = 4,
+  minGapPx = 10,
+): number[] {
+  const count = labels.length;
+  const candidates = sampleIndices(count, target).filter((i) => labels[i].length > 0);
+  if (candidates.length <= 1) return candidates;
+
+  const centerX = (i: number) => xAt(i, count, plot);
+  // 라벨 좌우 경계 — LineChart 의 textAnchor 규칙(처음 start / 끝 end / 중간 middle)과 동일
+  const bounds = (i: number): [number, number] => {
+    const w = estimateLabelWidth(labels[i]);
+    if (i === 0) return [centerX(i), centerX(i) + w];
+    if (i === count - 1) return [centerX(i) - w, centerX(i)];
+    return [centerX(i) - w / 2, centerX(i) + w / 2];
+  };
+
+  const kept: number[] = [candidates[0]];
+  const lastIdx = candidates[candidates.length - 1];
+  for (const i of candidates.slice(1, -1)) {
+    const [lo, hi] = bounds(i);
+    const [, prevHi] = bounds(kept[kept.length - 1]);
+    const [lastLo] = bounds(lastIdx);
+    if (lo >= prevHi + minGapPx && hi <= lastLo - minGapPx) kept.push(i);
+  }
+  if (lastIdx !== kept[kept.length - 1]) {
+    // 끝 라벨은 항상 포함 — 직전 라벨과 겹치면 직전 것을 버린다
+    while (kept.length > 1) {
+      const [, prevHi] = bounds(kept[kept.length - 1]);
+      if (bounds(lastIdx)[0] >= prevHi + minGapPx) break;
+      kept.pop();
+    }
+    kept.push(lastIdx);
+  }
+  return kept;
+}
+
 /** 눈금 라벨 포맷 — 스텝이 정수면 정수로, 아니면 소수 유지 */
 export function tickLabel(v: number, ticks: number[]): string {
   const step = ticks.length > 1 ? ticks[1] - ticks[0] : 1;

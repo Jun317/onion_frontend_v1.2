@@ -5,19 +5,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/common/Card';
 import { CategoryChip } from '@/components/common/CategoryChip';
+import { StreakCard } from '@/components/common/StreakCard';
 import { Wordmark } from '@/components/common/Wordmark';
 import { copy } from '@/constants/copy';
 import { useFeed } from '@/data/useFeed';
 import { usePrefs } from '@/lib/store';
 import { allCategories, categoryLabel, font, spacing, typography, useTheme } from '@/theme';
 
-/** 마이 — 관심 분야 선택 + 읽은 이슈 (그 외 설정 없음) */
+/** 마이 — 출석 스트릭 + 관심 분야 선택 + 읽은 이슈 + 단어장 */
 export default function MyScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { feed } = useFeed('importance');
-  const { read, interests, toggleInterest } = usePrefs();
+  const { read, interests, toggleInterest, words } = usePrefs();
   const readCount = Object.keys(read).length;
 
   return (
@@ -27,6 +28,8 @@ export default function MyScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <StreakCard />
+
         <Card style={styles.interestsCard}>
           <Text style={[styles.cardTitle, { color: theme.text }]}>{copy.myInterests}</Text>
           <Text style={[styles.cardHint, { color: theme.textMuted }]}>{copy.myInterestsHint}</Text>
@@ -48,6 +51,17 @@ export default function MyScreen() {
           <Card style={styles.readRow}>
             <Text style={[styles.readLabel, { color: theme.text }]}>
               {copy.myReadIssues(readCount)}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+          </Card>
+        </Pressable>
+
+        <Pressable
+          onPress={() => router.push('/my/words')}
+          style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+          <Card style={styles.readRow}>
+            <Text style={[styles.readLabel, { color: theme.text }]}>
+              {copy.myWords(words.length)}
             </Text>
             <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
           </Card>

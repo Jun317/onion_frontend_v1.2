@@ -111,7 +111,7 @@ for (const card of feed.issues) {
 }
 console.log(`details: ${feed.issues.length} ok, visuals ${visuals}, glossary terms ${glossaryTerms}`);
 
-// period 라벨 방어 확인
+// period 라벨 방어 확인 — 비정형 문자열은 원문 통과 대신 축약/숨김 (라벨 충돌 방지)
 assert(periodLabel('2024-07') === '24.7월', 'periodLabel normal');
-assert(periodLabel('2025-11013') === '2025-11013', 'periodLabel malformed passthrough');
+assert(!periodLabel('2025-11013').includes('11013'), 'periodLabel malformed shortened');
 console.log('ALL CHECKS PASSED');

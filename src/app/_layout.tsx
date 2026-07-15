@@ -35,6 +35,7 @@ export default function RootLayout() {
           <Stack.Screen name="issue/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="steady/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="my/read" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="my/words" options={{ animation: 'slide_from_right' }} />
         </Stack>
       </GlossaryProvider>
     </PrefsProvider>

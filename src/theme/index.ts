@@ -57,7 +57,7 @@ export function tint(color: string, pct: number): string {
   return mix(color, '#ffffff', pct);
 }
 
-/** 카테고리 8색 — 검증된 카테고리컬 슬롯에 고정 매핑 (순서 임의 변경 금지) */
+/** 카테고리 색 — 검증된 카테고리컬 슬롯에 고정 매핑 (순서 임의 변경 금지, 신규는 끝에 추가) */
 export const categoryColors: Record<Category, { color: string; label: string }> = {
   RATE: { color: '#2a78d6', label: '금리' },
   MACRO: { color: '#1baf7a', label: '경기' },
@@ -66,6 +66,7 @@ export const categoryColors: Record<Category, { color: string; label: string }> 
   GEO: { color: '#e34948', label: '지정학' },
   MARKET: { color: '#008300', label: '시장' },
   EARNINGS: { color: '#e87ba4', label: '실적' },
+  COMMODITY: { color: '#a16a1f', label: '원자재' }, // v3: FX 에서 분리 (유가·금)
   ETC: { color: '#898781', label: '기타' },
 };
 

@@ -9,6 +9,7 @@ export type Category =
   | 'MACRO'
   | 'POLICY'
   | 'FX'
+  | 'COMMODITY'
   | 'GEO'
   | 'MARKET'
   | 'EARNINGS'
@@ -45,6 +46,9 @@ export interface IssueCard {
   headline_stat?: HeadlineStat | null;
   spark?: number[] | null; // visual.series 의 v 만 5–8개
   icon?: string | null; // 이슈 아이콘 이모지 1개
+  // v3 필드 — 시점 배지 이원화(사건 시각) · "나에게는?" 생활 임팩트 한 줄
+  event_at?: string | null; // 사건 시각 ISO8601 (last_update 는 카드 갱신 시각)
+  impact_line?: string | null;
 }
 
 /** 스테디 상세 문단 내 이슈 참조 — phrase 는 text 에 반드시 포함 */
@@ -113,6 +117,7 @@ export interface Headline {
   source: string;
   url: string;
   published_at: string;
+  lang?: string; // v3: 원문 언어 ('en' 등) — 없으면 한글 비율로 추정
 }
 
 export interface TimelineEntry {

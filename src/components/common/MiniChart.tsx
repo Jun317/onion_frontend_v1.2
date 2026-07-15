@@ -20,9 +20,11 @@ interface Props {
 export function MiniChart({ visual, width, height = 120 }: Props) {
   const { theme } = useTheme();
 
-  // series 우선, 없으면(실적 그룹형) 첫 그룹의 시리즈로 흐름만 보여준다
+  // series 우선, 없으면(실적 그룹형) 첫 그룹의 시리즈로 흐름만 보여준다.
+  // 포인트 5개 미만은 "추세선 위장"이 되므로 히어로에서는 그리지 않는다
+  // (상세 시트의 ChartCard 가 숫자 카드로 폴백해 값 자체는 전달된다).
   const series: SeriesPoint[] | undefined =
-    visual.series && visual.series.length >= 2 ? visual.series : visual.groups?.[0]?.series;
+    visual.series && visual.series.length >= 5 ? visual.series : visual.groups?.[0]?.series;
   if (!series || series.length < 2 || width <= 0) return null;
 
   const plot: Rect = { x: 4, y: 14, w: width - 64, h: height - 14 - 22 };

@@ -12,14 +12,14 @@ import { SortToggle } from '@/components/feed/SortToggle';
 import { copy } from '@/constants/copy';
 import type { Category, SortKey } from '@/data/types';
 import { useFeed } from '@/data/useFeed';
-import { usePrefs } from '@/lib/store';
-import { allCategories, categoryLabel, spacing, useTheme } from '@/theme';
+import { ATTENDANCE_GOAL, usePrefs } from '@/lib/store';
+import { allCategories, categoryLabel, font, spacing, useTheme } from '@/theme';
 
 export default function IssueListScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { isRead, interests } = usePrefs();
+  const { isRead, interests, todayReadCount } = usePrefs();
   const [sort, setSort] = useState<SortKey>('importance');
   const [filter, setFilter] = useState<Category | null>(null);
   const { feed, issues, loading, refreshing, error, fromStaleCache, refresh } = useFeed(sort);
@@ -65,6 +65,10 @@ export default function IssueListScreen() {
         </ScrollView>
 
         <View style={styles.sortRow}>
+          {/* 오늘 읽기 진행 — 출석(하루 3개)까지 남은 개수 (P2 리텐션 루프) */}
+          <Text style={[styles.progress, { color: theme.textMuted }]}>
+            {copy.todayProgress(todayReadCount, Math.max(0, ATTENDANCE_GOAL - todayReadCount))}
+          </Text>
           <SortToggle sort={sort} onChange={setSort} />
         </View>
       </View>
@@ -114,7 +118,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   chips: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.md },
-  sortRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.md },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+  },
+  progress: { fontSize: 12, ...font(600) },
   list: { padding: spacing.md, paddingBottom: spacing.xl },
   attribution: { fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: spacing.lg },
 });
