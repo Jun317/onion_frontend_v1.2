@@ -9,12 +9,37 @@ import { HeroStat } from '@/components/common/HeroStat';
 import { MiniChart } from '@/components/common/MiniChart';
 import { GlossaryText } from '@/components/glossary/GlossaryText';
 import { copy } from '@/constants/copy';
-import type { IssueCard } from '@/data/types';
+import type { HeadlineStat, IssueCard } from '@/data/types';
 import { useIssue } from '@/data/useIssue';
 import { categoryColor, font, radius, spacing, tint, typography, useTheme } from '@/theme';
-import { relativeTime } from '@/utils/format';
+import { formatNumber, relativeTime } from '@/utils/format';
 
 import { DetailSheet } from './DetailSheet';
+
+/**
+ * headline_stat 부재 시 상세 anchors[0] 로 파생하는 폴백 스탯.
+ * 표기 규칙은 백엔드 export._headline_stat 과 동일하게 맞춘다 (프론트 창작 금지).
+ */
+function deriveStat(anchors?: { entity: string; metric: string; value: number; unit: string; prev: number | null }[]): HeadlineStat | null {
+  const a = anchors?.find((x) => x.value != null && x.metric !== '변동폭');
+  if (!a) return null;
+  const stat: HeadlineStat = {
+    label: `${a.entity} ${a.metric}`.trim(),
+    value: formatNumber(a.value),
+    unit: a.unit ?? '',
+    delta_text: null,
+    direction: 'flat',
+    prev_text: null,
+  };
+  if (a.prev != null) {
+    const delta = a.value - a.prev;
+    const deltaUnit = a.unit === '%' ? '%p' : a.unit ?? '';
+    stat.direction = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+    stat.delta_text = `${delta > 0 ? '+' : delta < 0 ? '-' : '±'}${formatNumber(Math.abs(delta))}${deltaUnit}`;
+    stat.prev_text = `직전 ${formatNumber(a.prev)}${a.unit ?? ''}`;
+  }
+  return stat;
+}
 
 interface Props {
   card: IssueCard;
@@ -65,7 +90,15 @@ export function IssuePage({
 
   const glossary = detail?.glossary ?? [];
   const whyNow = detail?.why_now ?? card.why_now;
-  const stat = card.headline_stat ?? detail?.headline_stat;
+  // 히어로 밀도 보장: headline_stat 이 없으면 상세의 첫 앵커로 스탯을 파생 —
+  // 스탯·차트·왜중요 전부 빠져 화면 하단이 비는 "데드스페이스" 방지 (검증 보고서 P1)
+  const stat = card.headline_stat ?? detail?.headline_stat ?? deriveStat(detail?.anchors);
+  const impactLine = detail?.impact_line ?? card.impact_line;
+  // 시점 배지 이원화: 주 표기 = 사건 시각, 보조 = 카드 업데이트 (1시간 이상 벌어질 때만)
+  const eventAt = card.event_at ?? card.last_update;
+  const showUpdated =
+    !!card.event_at &&
+    new Date(card.last_update).getTime() - new Date(card.event_at).getTime() > 60 * 60_000;
   const background = tint(categoryColor(card.category), 0.07);
 
   return (
@@ -83,7 +116,14 @@ export function IssuePage({
         showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
           <CategoryBadge category={card.category} size="md" />
-          <Text style={[styles.time, { color: theme.textMuted }]}>{relativeTime(card.last_update)}</Text>
+          <View style={styles.timeCol}>
+            <Text style={[styles.time, { color: theme.textMuted }]}>{relativeTime(eventAt)}</Text>
+            {showUpdated && (
+              <Text style={[styles.timeSub, { color: theme.textMuted }]}>
+                {copy.updatedAt(relativeTime(card.last_update))}
+              </Text>
+            )}
+          </View>
         </View>
 
         <Text style={[styles.title, { color: theme.text }]}>{card.title}</Text>
@@ -106,7 +146,26 @@ export function IssuePage({
               <GlossaryText
                 text={whyNow}
                 glossary={glossary}
-                style={[typography.body, { color: theme.textSecondary }]}
+                style={[
+                  typography.body,
+                  { color: theme.textSecondary },
+                  // 스탯·차트가 모두 없으면 이 카드가 히어로의 중심 — 본문을 키운다
+                  !stat && !detail?.visual && styles.whyNowPromoted,
+                ]}
+              />
+            </View>
+          </Card>
+        )}
+
+        {!!impactLine && (
+          <Card style={[styles.impact, { backgroundColor: tint(theme.accent, 0.08) }]}>
+            <Text style={styles.whyNowEmoji}>👛</Text>
+            <View style={styles.whyNowBody}>
+              <Text style={[styles.whyNowLabel, { color: theme.accent }]}>{copy.impactLine}</Text>
+              <GlossaryText
+                text={impactLine}
+                glossary={glossary}
+                style={[typography.body, { color: theme.text }]}
               />
             </View>
           </Card>
@@ -176,14 +235,18 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, zIndex: 1 },
   // paddingTop 48 = 페이저 상단 오버레이(진행 세그먼트+닫기)와 겹침 방지
   content: { paddingHorizontal: spacing.md, paddingTop: 48, paddingBottom: spacing.md, gap: spacing.md },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  timeCol: { alignItems: 'flex-end', gap: 1 },
   time: { ...typography.caption },
+  timeSub: { ...typography.micro, opacity: 0.8 },
   title: { ...typography.viewerTitle },
   oneLiner: { fontSize: 16, lineHeight: 25, ...font(400) },
   whyNow: { flexDirection: 'row', gap: spacing.sm },
   whyNowEmoji: { fontSize: 18 },
   whyNowBody: { flex: 1, gap: 2 },
   whyNowLabel: { ...typography.caption, ...font(700) },
+  whyNowPromoted: { fontSize: 17, lineHeight: 26 },
+  impact: { flexDirection: 'row', gap: spacing.sm },
   bottom: { paddingHorizontal: spacing.md, gap: spacing.sm, zIndex: 1 },
   learnMore: {
     height: 52,

@@ -14,7 +14,7 @@ import type {
   TimelineEntry,
 } from '@/data/types';
 import { font, radius, spacing, typography, useTheme } from '@/theme';
-import { formatNumber, periodLabel, relativeTime } from '@/utils/format';
+import { formatNumber, koreanRatio, periodLabel, relativeTime } from '@/utils/format';
 
 function SectionTitle({ children }: { children: string }) {
   const { theme } = useTheme();
@@ -137,7 +137,13 @@ export function TimelineSection({ timeline }: { timeline: TimelineEntry[] }) {
   );
 }
 
-/** 실제 기사로 보기 — 원문 링크 행 */
+/** 원문이 외국어인지 — 백엔드 lang 필드 우선, 구 JSON 은 한글 비율로 추정 */
+function isForeignHeadline(h: Headline): boolean {
+  if (h.lang) return h.lang !== 'ko';
+  return koreanRatio(h.title) < 0.3;
+}
+
+/** 실제 기사로 보기 — 원문 링크 행. 외국어 원문에는 언어 배지로 기대치를 조정한다. */
 export function HeadlinesSection({ headlines }: { headlines: Headline[] }) {
   const { theme } = useTheme();
   if (headlines.length === 0) return null;
@@ -157,7 +163,14 @@ export function HeadlinesSection({ headlines }: { headlines: Headline[] }) {
             <Text style={[styles.timelineTitle, { color: theme.text }]} numberOfLines={2}>
               {h.title}
             </Text>
-            <Text style={[styles.timelineMeta, { color: theme.textMuted }]}>{h.source}</Text>
+            <View style={styles.headlineMetaRow}>
+              {isForeignHeadline(h) && (
+                <Text style={[styles.langBadge, { color: theme.textMuted, borderColor: theme.border }]}>
+                  {(h.lang ?? 'en').toUpperCase()}
+                </Text>
+              )}
+              <Text style={[styles.timelineMeta, { color: theme.textMuted }]}>{h.source}</Text>
+            </View>
           </View>
           <Ionicons name="open-outline" size={16} color={theme.textMuted} />
         </Pressable>
@@ -237,6 +250,16 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
+  },
+  headlineMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  langBadge: {
+    fontSize: 9,
+    ...font(700),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    overflow: 'hidden',
   },
   relatedWrap: { gap: spacing.sm },
   relatedChip: {

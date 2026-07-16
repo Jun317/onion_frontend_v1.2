@@ -30,8 +30,10 @@ export function IssueCard({ issue, read, onPress }: Props) {
         read && styles.read,
         pressed && styles.pressed,
       ]}>
-      {/* 생성 시간 — 모든 카드에서 우상단 고정 */}
-      <Text style={[styles.time, { color: theme.textMuted }]}>{relativeTime(issue.last_update)}</Text>
+      {/* 사건 시각 — 모든 카드에서 우상단 고정 (v3: 처리 시각 대신 실제 사건 시각) */}
+      <Text style={[styles.time, { color: theme.textMuted }]}>
+        {relativeTime(issue.event_at ?? issue.last_update)}
+      </Text>
 
       <View style={styles.row}>
         <View style={styles.content}>

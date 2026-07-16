@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { copy } from '@/constants/copy';
 import type { GlossaryEntry } from '@/data/types';
+import { usePrefs } from '@/lib/store';
 import { font, motion, radius, spacing, typography, useTheme } from '@/theme';
 
 interface Props {
@@ -9,9 +11,10 @@ interface Props {
   onClose: () => void;
 }
 
-/** 용어 해설 하단 시트 — Modal 기반 자체 구현 (외부 의존성 없음) */
+/** 용어 해설 하단 시트 — Modal 기반 자체 구현 (외부 의존성 없음). 단어장 저장 토글 포함. */
 export function GlossarySheet({ entry, onClose }: Props) {
   const { theme } = useTheme();
+  const { isWordSaved, toggleWord } = usePrefs();
   const slide = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -44,14 +47,33 @@ export function GlossarySheet({ entry, onClose }: Props) {
               <Text style={[styles.exampleText, { color: theme.textSecondary }]}>{entry.example}</Text>
             </View>
           )}
-          <Pressable
-            onPress={onClose}
-            style={({ pressed }) => [
-              styles.closeButton,
-              { backgroundColor: theme.background, opacity: pressed ? 0.6 : 1 },
-            ]}>
-            <Text style={[styles.closeText, { color: theme.textSecondary }]}>알겠어요</Text>
-          </Pressable>
+          <View style={styles.buttonRow}>
+            <Pressable
+              onPress={() => toggleWord(entry)}
+              style={({ pressed }) => [
+                styles.saveButton,
+                {
+                  backgroundColor: isWordSaved(entry.term) ? theme.accentSoft : theme.accent,
+                  opacity: pressed ? 0.6 : 1,
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.closeText,
+                  { color: isWordSaved(entry.term) ? theme.accent : theme.onAccent },
+                ]}>
+                {isWordSaved(entry.term) ? copy.wordSaved : copy.wordSave}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.closeButton,
+                { backgroundColor: theme.background, opacity: pressed ? 0.6 : 1 },
+              ]}>
+              <Text style={[styles.closeText, { color: theme.textSecondary }]}>알겠어요</Text>
+            </Pressable>
+          </View>
         </Animated.View>
       </Pressable>
     </Modal>
@@ -74,6 +96,8 @@ const styles = StyleSheet.create({
   exampleBox: { borderRadius: radius.control, padding: spacing.md, marginBottom: spacing.md },
   exampleLabel: { ...typography.caption, marginBottom: spacing.xs },
   exampleText: { ...typography.body },
-  closeButton: { borderRadius: radius.control, alignItems: 'center', paddingVertical: 12 },
+  buttonRow: { flexDirection: 'row', gap: spacing.sm },
+  saveButton: { flex: 1, borderRadius: radius.control, alignItems: 'center', paddingVertical: 12 },
+  closeButton: { flex: 1, borderRadius: radius.control, alignItems: 'center', paddingVertical: 12 },
   closeText: { fontSize: 16, ...font(600) },
 });
