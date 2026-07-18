@@ -10,11 +10,11 @@ const extra = (Constants.expoConfig?.extra ?? {}) as {
 };
 
 export const PRIMARY_BASE =
-  extra.apiPrimaryBase ?? 'https://jun317.github.io/onion_backend_v1.2/out';
+  extra.apiPrimaryBase ?? 'https://jun317.github.io/onion_backend_v1.2/out_mvp';
 
 /** Pages 장애 시 폴백 — 같은 파일이 main 브랜치에 커밋되어 있다. */
 export const FALLBACK_BASE =
-  extra.apiFallbackBase ?? 'https://raw.githubusercontent.com/jun317/onion_backend_v1.2/main/out';
+  extra.apiFallbackBase ?? 'https://raw.githubusercontent.com/jun317/onion_backend_v1.2/main/out_mvp';
 
 export const feedPath = () => '/index.json';
 export const issuePath = (id: string) => `/issues/${id}.json`;

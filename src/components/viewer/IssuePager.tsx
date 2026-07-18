@@ -15,7 +15,6 @@ interface Props {
   issues: IssueCard[];
   initialIndex: number;
   onClose: () => void;
-  onPressRelated: (id: string) => void;
 }
 
 /** ↑↓ 보조 버튼 연타 방지 쿨다운 (ms) */
@@ -62,7 +61,7 @@ function ProgressSegments({ active, total }: { active: number; total: number }) 
  * 더 알아보기 시트가 열려 있는 동안은 세로 스크롤 잠금 (제스처 충돌 방지).
  * 페이지에 들어온 이슈는 읽음 처리한다.
  */
-export function IssuePager({ issues, initialIndex, onClose, onPressRelated }: Props) {
+export function IssuePager({ issues, initialIndex, onClose }: Props) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { markRead } = usePrefs();
@@ -136,7 +135,6 @@ export function IssuePager({ issues, initialIndex, onClose, onPressRelated }: Pr
                 onPrev={goPrev}
                 onNext={goNext}
                 onDetailOpenChange={setVerticalLocked}
-                onPressRelated={onPressRelated}
               />
             </View>
           )}

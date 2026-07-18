@@ -9,8 +9,8 @@ import { periodLabel, relativeTime } from '../src/utils/format.ts';
 import type { FeedIndex, IssueDetail } from '../src/data/types.ts';
 
 const BASES = [
-  'https://jun317.github.io/onion_backend_v1.2/out',
-  'https://raw.githubusercontent.com/jun317/onion_backend_v1.2/main/out',
+  'https://jun317.github.io/onion_backend_v1.2/out_mvp',
+  'https://raw.githubusercontent.com/jun317/onion_backend_v1.2/main/out_mvp',
 ];
 
 async function fetchJson<T>(path: string): Promise<T> {
@@ -70,15 +70,37 @@ if (feed.steady != null) {
 }
 console.log(`feed: ${feed.issues.length} issues, generated ${relativeTime(feed.generated_at)}`);
 
+// v4 스키마 — MVP 큐레이션 패키지 검증
+if ((feed.schema_version ?? 0) >= 4) {
+  assert(feed.issues.length === 57, `v4 issues 57 (${feed.issues.length})`);
+  assert((feed.steady?.length ?? 0) === 4, 'v4 steady 4');
+  assert((feed.categories?.length ?? 0) === 7, 'v4 categories 7');
+  assert((feed.scoreboard?.length ?? 0) === 13, 'v4 scoreboard 13');
+  for (const c of feed.issues) {
+    assert(['weekly', 'monthly', 'yearly'].includes(c.period_tier ?? ''), `period_tier (${c.id})`);
+    assert((c.key_stats?.length ?? 0) === 2, `key_stats 2 (${c.id})`);
+    assert(typeof c.date_label === 'string' && c.date_label.length > 0, `date_label (${c.id})`);
+  }
+  for (const s of feed.steady ?? []) {
+    assert((s.score?.length ?? 0) === 3 && (s.story?.length ?? 0) === 3, `steady 6블록 (${s.id})`);
+    for (const entry of s.timeline ?? []) {
+      for (const link of entry.links ?? []) {
+        assert(feed.issues.some((i) => i.id === link.issue_id), `steady link → issue (${s.id}: ${link.issue_id})`);
+      }
+    }
+  }
+  console.log('v4 checks ok — 57 issues · 4 steady · 7 categories · 13 scoreboard');
+}
+
 const byImportance = sortIssues(feed.issues, 'importance');
 const byLatest = sortIssues(feed.issues, 'latest');
 const activeImp = byImportance.filter((i) => i.status === 'active');
 for (let i = 1; i < activeImp.length; i++) {
   assert(activeImp[i - 1].importance >= activeImp[i].importance, 'importance order');
 }
+const firstStale = byImportance.findIndex((i) => i.status === 'stale');
 assert(
-  byImportance.findIndex((i) => i.status === 'stale') >=
-    byImportance.filter((i) => i.status === 'active').length,
+  firstStale === -1 || firstStale >= byImportance.filter((i) => i.status === 'active').length,
   'stale after active',
 );
 console.log(
@@ -100,6 +122,10 @@ for (const card of feed.issues) {
       for (const g of v.groups) {
         const ts = g.series.map((p) => p.t);
         assert(new Set(ts).size === ts.length, `dedup groups (${card.id})`);
+      }
+    } else if (v.series_multi) {
+      for (const s of v.series_multi) {
+        assert(s.series.filter((p) => typeof p.v === 'number').length >= 2, `multi>=2 (${card.id})`);
       }
     } else {
       assert((v.series?.length ?? 0) >= 2, `series>=2 (${card.id})`);

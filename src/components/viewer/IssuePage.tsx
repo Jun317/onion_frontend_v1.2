@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/common/Card';
 import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { HeroStat } from '@/components/common/HeroStat';
+import { KeyStatTiles } from '@/components/common/KeyStatTiles';
 import { MiniChart } from '@/components/common/MiniChart';
 import { GlossaryText } from '@/components/glossary/GlossaryText';
 import { copy } from '@/constants/copy';
@@ -51,7 +52,6 @@ interface Props {
   onPrev: () => void;
   onNext: () => void;
   onDetailOpenChange: (open: boolean) => void;
-  onPressRelated: (id: string) => void;
 }
 
 /**
@@ -69,7 +69,6 @@ export function IssuePage({
   onPrev,
   onNext,
   onDetailOpenChange,
-  onPressRelated,
 }: Props) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -80,14 +79,6 @@ export function IssuePage({
     onDetailOpenChange(sheetOpen);
   }, [sheetOpen, onDetailOpenChange]);
 
-  const handleRelated = useCallback(
-    (id: string) => {
-      setSheetOpen(false);
-      onPressRelated(id);
-    },
-    [onPressRelated],
-  );
-
   const glossary = detail?.glossary ?? [];
   const whyNow = detail?.why_now ?? card.why_now;
   // 히어로 밀도 보장: headline_stat 이 없으면 상세의 첫 앵커로 스탯을 파생 —
@@ -97,6 +88,7 @@ export function IssuePage({
   // 시점 배지 이원화: 주 표기 = 사건 시각, 보조 = 카드 업데이트 (1시간 이상 벌어질 때만)
   const eventAt = card.event_at ?? card.last_update;
   const showUpdated =
+    !card.date_label &&
     !!card.event_at &&
     new Date(card.last_update).getTime() - new Date(card.event_at).getTime() > 60 * 60_000;
   const background = tint(categoryColor(card.category), 0.07);
@@ -117,7 +109,9 @@ export function IssuePage({
         <View style={styles.topRow}>
           <CategoryBadge category={card.category} size="md" />
           <View style={styles.timeCol}>
-            <Text style={[styles.time, { color: theme.textMuted }]}>{relativeTime(eventAt)}</Text>
+            <Text style={[styles.time, { color: theme.textMuted }]} numberOfLines={1}>
+              {card.date_label ?? relativeTime(eventAt)}
+            </Text>
             {showUpdated && (
               <Text style={[styles.timeSub, { color: theme.textMuted }]}>
                 {copy.updatedAt(relativeTime(card.last_update))}
@@ -128,13 +122,19 @@ export function IssuePage({
 
         <Text style={[styles.title, { color: theme.text }]}>{card.title}</Text>
 
-        {stat && <HeroStat stat={stat} />}
+        {card.key_stats && card.key_stats.length > 0 ? (
+          <KeyStatTiles stats={card.key_stats} />
+        ) : (
+          stat && <HeroStat stat={stat} />
+        )}
 
-        <GlossaryText
-          text={card.one_liner}
-          glossary={glossary}
-          style={[styles.oneLiner, { color: theme.textSecondary }]}
-        />
+        {card.one_liner !== card.title && (
+          <GlossaryText
+            text={card.one_liner}
+            glossary={glossary}
+            style={[styles.oneLiner, { color: theme.textSecondary }]}
+          />
+        )}
 
         {detail?.visual && <MiniChart visual={detail.visual} width={width - spacing.md * 2} />}
 
@@ -213,7 +213,6 @@ export function IssuePage({
         error={error}
         onRetry={retry}
         onClose={() => setSheetOpen(false)}
-        onPressRelated={handleRelated}
         width={width}
       />
     </View>

@@ -8,6 +8,7 @@ export const copy = {
   // 피드
   freshnessOffline: '오프라인 — 저장된 소식이에요',
   freshnessUpdated: (rel: string) => `${rel} 업데이트`,
+  freshnessSnapshot: (date: string) => `${date} 기준`,
 
   // 뷰어
   whyNow: '왜 중요할까요?',
@@ -18,19 +19,28 @@ export const copy = {
   viewerHintLine: '↕ 위아래로 넘기면 다음 이슈',
   viewerHintDismiss: '탭해서 시작하기',
 
-  // 더 알아보기 시트 섹션
+  // 더 알아보기 시트 섹션 (v4: 흐름·기사·같이보면·숫자로 보면 제거)
   sectionDetails: '무슨 일이에요?',
   sectionEffects: '그래서 어떻게 되나요?',
-  sectionAnchors: '숫자로 보면',
-  sectionTimeline: '지금까지 흐름',
-  sectionHeadlines: '실제 기사로 보기',
-  sectionRelated: '같이 보면 좋아요',
+  sectionTips: '알아두면 좋아요',
+  sectionVisuals: '자세한 데이터로 보면',
+
+  // 기간 칩 (v4)
+  tierWeekly: '이번 주',
+  tierMonthly: '1개월',
+  tierYearly: '연간',
 
   // 스테디
   steadySubtitle: '계속 지켜봐야 할 이슈예요',
   steadyEmptyTitle: '준비 중이에요',
   steadyEmptySubtitle: '오래 두고 볼 큰 이슈들을 모으고 있어요.\n다음 업데이트에서 만나요!',
-  steadyHint: '옆으로 넘기면 자세한 설명',
+  // 스테디 6블록 (v4)
+  steadyScore: '지금 스코어',
+  steadyStory: '지금까지 줄거리',
+  steadyTimeline: '타임라인',
+  steadyImpact: '나에게 미치는 영향',
+  steadyNextUp: '다음 화 예고 — 이 뉴스가 뜨면 다음 화예요',
+  steadyVisuals: '연결 시각자료',
 
   // 용어 사전 · 단어장
   wordSave: '📔 내 단어장에 저장',

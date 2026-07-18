@@ -11,18 +11,13 @@ import {
 } from 'react-native';
 
 import { ChartCard } from '@/components/charts/ChartCard';
+import { TableCard } from '@/components/charts/TableCard';
+import { TimelineCard } from '@/components/charts/TimelineCard';
 import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { ErrorView } from '@/components/common/StateViews';
-import {
-  AnchorsSection,
-  DetailsSection,
-  EffectsSection,
-  HeadlinesSection,
-  RelatedSection,
-  TimelineSection,
-} from '@/components/detail/sections';
+import { DetailsSection, EffectRowsSection, TipsSection } from '@/components/detail/sections';
 import { copy } from '@/constants/copy';
-import type { IssueCard, IssueDetail } from '@/data/types';
+import type { IssueCard, IssueDetail, Visual } from '@/data/types';
 import { motion, radius, spacing, typography, useTheme } from '@/theme';
 
 interface Props {
@@ -32,16 +27,24 @@ interface Props {
   error: Error | null;
   onRetry: () => void;
   onClose: () => void;
-  onPressRelated: (id: string) => void;
   width: number;
 }
 
+/** kind 별 시각자료 라우팅 — chart(원본형)·table·timeline */
+function VisualBlock({ visual, width }: { visual: Visual; width: number }) {
+  const kind = visual.kind ?? 'chart';
+  if (kind === 'table') return <TableCard visual={visual} width={width} />;
+  if (kind === 'timeline') return <TimelineCard visual={visual} width={width} />;
+  return <ChartCard visual={visual} width={width} />;
+}
+
 /**
- * "더 알아보기" 바텀시트 — 기존 가로 2페이지(더보기 페인)를 대체.
- * 92% 높이 · 상단 라운드 20 · 드래그 핸들 · 220ms slide-up (용어 시트와 동일한 모달 문법).
- * 섹션 순서 고정: 배지+제목 → 무슨 일 → 그래서 → 숫자 → 흐름 → 기사 → 같이 보면 → 면책.
+ * "더 알아보기" 바텀시트 — 92% 높이 · 상단 라운드 20 · 드래그 핸들 · 220ms slide-up.
+ * 섹션 순서 고정: 배지+제목 → 무슨 일 → 그래서(정보별 행) → 알아두면 좋아요
+ * → 시각자료 원본(대표+추가: 차트·표·타임라인) → 면책.
+ * (지금까지 흐름·실제 기사·같이 보면 좋아요·숫자로 보면은 v4 에서 제거 — 소비 빈도 낮음)
  */
-export function DetailSheet({ visible, card, detail, error, onRetry, onClose, onPressRelated, width }: Props) {
+export function DetailSheet({ visible, card, detail, error, onRetry, onClose, width }: Props) {
   const { theme } = useTheme();
   const slide = useRef(new Animated.Value(0)).current;
 
@@ -84,12 +87,31 @@ export function DetailSheet({ visible, card, detail, error, onRetry, onClose, on
                 <Text style={[styles.header, { color: theme.text }]}>{card.title}</Text>
               </View>
               <DetailsSection details={detail.details} glossary={detail.glossary} />
-              <EffectsSection effects={detail.effects} glossary={detail.glossary} />
-              <AnchorsSection anchors={detail.anchors} />
-              {detail.visual && <ChartCard visual={detail.visual} width={width - spacing.md * 2} />}
-              <TimelineSection timeline={detail.timeline} />
-              <HeadlinesSection headlines={detail.headlines} />
-              <RelatedSection related={detail.related} onPressIssue={onPressRelated} />
+              <EffectRowsSection
+                rows={detail.effect_rows ?? []}
+                effects={detail.effects}
+                glossary={detail.glossary}
+              />
+              <TipsSection tips={detail.tips ?? []} glossary={detail.glossary} />
+              {(() => {
+                const visuals =
+                  detail.visuals && detail.visuals.length > 0
+                    ? detail.visuals
+                    : detail.visual
+                      ? [detail.visual]
+                      : [];
+                if (visuals.length === 0) return null;
+                return (
+                  <View style={styles.visuals}>
+                    <Text style={[styles.visualsTitle, { color: theme.text }]}>
+                      {copy.sectionVisuals}
+                    </Text>
+                    {visuals.map((v, i) => (
+                      <VisualBlock key={v.id ?? i} visual={v} width={width - spacing.md * 2} />
+                    ))}
+                  </View>
+                );
+              })()}
               <Text style={[styles.disclaimer, { color: theme.textMuted }]}>{copy.disclaimer}</Text>
             </ScrollView>
           )}
@@ -114,5 +136,7 @@ const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl * 2, gap: spacing.lg },
   headerRow: { gap: spacing.sm },
   header: { ...typography.title },
+  visuals: { gap: spacing.sm },
+  visualsTitle: { fontSize: 17, fontWeight: '800', marginBottom: 2 },
   disclaimer: { fontSize: 11, textAlign: 'center', marginTop: spacing.md },
 });

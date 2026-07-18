@@ -32,8 +32,8 @@
       ]
     ],
     "extra": {
-      "apiPrimaryBase": "https://jun317.github.io/onion_backend_v1.2/out",
-      "apiFallbackBase": "https://raw.githubusercontent.com/jun317/onion_backend_v1.2/main/out"
+      "apiPrimaryBase": "https://jun317.github.io/onion_backend_v1.2/out_mvp",
+      "apiFallbackBase": "https://raw.githubusercontent.com/jun317/onion_backend_v1.2/main/out_mvp"
     },
     "experiments": {
       "typedRoutes": true,

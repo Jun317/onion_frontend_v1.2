@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const PREFIX = 'onion:';
+// v4: 스키마/데이터소스 전환 시 구 캐시가 첫 화면에 뜨지 않도록 프리픽스를 버전화
+const PREFIX = 'onion:v4:';
 
 interface CacheEnvelope<T> {
   savedAt: number;
