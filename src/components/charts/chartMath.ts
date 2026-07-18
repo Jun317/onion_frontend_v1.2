@@ -1,4 +1,5 @@
-import type { SeriesPoint } from '@/data/types';
+/** 경로 빌더용 숫자 포인트 — null 갭은 호출부에서 분할/제거 후 전달 */
+export type NumericPoint = { t: string; v: number };
 
 /** 보기 좋은 눈금 간격 (1/2/2.5/5 × 10^n) */
 function niceStep(rough: number): number {
@@ -52,14 +53,14 @@ export function yAt(v: number, scale: Scale, plot: Rect): number {
 }
 
 /** 꺾은선 path */
-export function linePath(series: SeriesPoint[], scale: Scale, plot: Rect): string {
+export function linePath(series: NumericPoint[], scale: Scale, plot: Rect): string {
   return series
     .map((p, i) => `${i === 0 ? 'M' : 'L'}${xAt(i, series.length, plot).toFixed(1)},${yAt(p.v, scale, plot).toFixed(1)}`)
     .join(' ');
 }
 
 /** 계단(step-after) path — 기준금리처럼 결정 시점까지 값이 유지되는 시리즈용 */
-export function stepPath(series: SeriesPoint[], scale: Scale, plot: Rect): string {
+export function stepPath(series: NumericPoint[], scale: Scale, plot: Rect): string {
   const parts: string[] = [];
   for (let i = 0; i < series.length; i++) {
     const x = xAt(i, series.length, plot);

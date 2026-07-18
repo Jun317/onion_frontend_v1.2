@@ -46,7 +46,11 @@ export default function IssueListScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Wordmark text="onion" />
-          <FreshnessBar generatedAt={feed?.generated_at ?? null} offline={fromStaleCache || error !== null} />
+          <FreshnessBar
+            generatedAt={feed?.generated_at ?? null}
+            offline={fromStaleCache || error !== null}
+            snapshot={(feed?.schema_version ?? 0) >= 4}
+          />
         </View>
 
         <ScrollView

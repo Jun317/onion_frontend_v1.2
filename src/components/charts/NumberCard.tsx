@@ -14,8 +14,12 @@ interface Props {
  * 데이터 포인트가 적을 때(<5)의 차트 폴백 — 점 두 개짜리 직선을 "추이"처럼
  * 보여주는 대신 최신값 + 증감 필 + 사유 한 줄로 정직하게 표기한다 (차트 문법 준수).
  */
-export function NumberCard({ series, unit = '' }: Props) {
+export function NumberCard({ series: rawSeries, unit = '' }: Props) {
   const { theme } = useTheme();
+  // v4: null 갭 포인트 제외 (숫자 카드는 실측값만)
+  const series = rawSeries.filter(
+    (p): p is typeof p & { v: number } => typeof p.v === 'number' && isFinite(p.v),
+  );
   if (series.length === 0) return null;
 
   const last = series[series.length - 1];

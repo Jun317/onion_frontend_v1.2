@@ -68,7 +68,35 @@ export const categoryColors: Record<Category, { color: string; label: string }> 
   EARNINGS: { color: '#e87ba4', label: '실적' },
   COMMODITY: { color: '#a16a1f', label: '원자재' }, // v3: FX 에서 분리 (유가·금)
   ETC: { color: '#898781', label: '기타' },
+  // v4 MVP 큐레이션 카테고리 — 검증된 기존 슬롯 색 재사용 (신구 코드는 한 피드에 공존 안 함)
+  RATES: { color: '#2a78d6', label: '금리' },
+  STOCKS: { color: '#008300', label: '주식' },
+  CRYPTO: { color: '#a16a1f', label: '코인' },
+  HOUSING: { color: '#1baf7a', label: '부동산' },
+  AI_CHIPS: { color: '#4a3aa7', label: 'AI·반도체' },
+  PRICES: { color: '#e87ba4', label: '물가·내 지갑' },
+  FX_WORLD: { color: '#eb6834', label: '환율·세계' },
 };
+
+/** v4 시각자료 color role → 팔레트 색 (accent/up/down/gold/green/ink/muted) */
+export function roleColor(role: string | undefined, theme: Theme): string {
+  switch (role) {
+    case 'up':
+      return theme.up;
+    case 'down':
+      return theme.down;
+    case 'gold':
+      return '#a16a1f';
+    case 'green':
+      return '#1baf7a';
+    case 'ink':
+      return theme.text;
+    case 'muted':
+      return theme.textMuted;
+    default:
+      return theme.accent;
+  }
+}
 
 function categoryEntry(category: Category | string) {
   return categoryColors[(category as Category) in categoryColors ? (category as Category) : 'ETC'];

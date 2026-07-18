@@ -5,7 +5,7 @@
  */
 import { estimateLabelWidth, linePath, niceScale, sampleIndices, sampleLabelIndices, stepPath, xAt, yAt } from '../src/components/charts/chartMath.ts';
 import { splitByTerms } from '../src/components/glossary/parse.ts';
-import { cleanSeries, normalizeVisual } from '../src/data/normalize.ts';
+import { cleanSeries, cleanSeriesKeepGaps, normalizeVisual, numericCount } from '../src/data/normalize.ts';
 import { calcStreak, dateKey } from '../src/lib/attendance.ts';
 import { koreanRatio, periodLabel, periodRange } from '../src/utils/format.ts';
 
@@ -135,6 +135,41 @@ function assert(cond: unknown, msg: string): asserts cond {
   assert(calcStreak([d(3), d(2), d(1)], now) === 3, '오늘 미출석이면 어제부터 계산');
   assert(calcStreak([d(4), d(3), d(1)], now) === 1, '중간 공백은 끊김');
   assert(calcStreak([d(5), d(4)], now) === 0, '이틀 전 이전 기록만 있으면 0');
+}
+
+// ── v4 normalizeVisual: kind 분기·멀티시리즈·null 갭 보존 ──
+{
+  const table = normalizeVisual({
+    kind: 'table', title: '표', columns: ['지표', '값'], rows: [['금리', '2.75%']],
+  });
+  assert(table !== null && table.kind === 'table', 'table kind 통과');
+  assert(normalizeVisual({ kind: 'table', title: '빈 표', columns: [], rows: [] }) === null, '빈 표는 null');
+
+  const tl = normalizeVisual({
+    kind: 'timeline', title: '일지', entries: [{ date_label: '2.28', text: '전쟁 발발' }],
+  });
+  assert(tl !== null && tl.kind === 'timeline', 'timeline kind 통과');
+
+  const multi = normalizeVisual({
+    kind: 'chart', chart: 'line', title: '한미 물가',
+    series_multi: [
+      { name: '한국', color_role: 'accent', series: [{ t: '2026-01', v: 1.9 }, { t: '2026-02', v: 1.9 }, { t: '2026-03', v: 2.3 }] },
+      { name: '미국', color_role: 'up', series: [{ t: '2026-01', v: 3.0 }, { t: '2026-02', v: null }, { t: '2026-03', v: 3.7 }] },
+      { name: '빈 시리즈', color_role: 'muted', series: [{ t: '2026-01', v: null }] },
+    ],
+  });
+  assert(multi !== null && multi.series_multi!.length === 2, '멀티시리즈: 유효 2개만 유지');
+  assert(multi.series_multi![1].series.some((p) => p.v === null), 'null 갭 보존');
+
+  // 막대는 null 슬롯 보존, 라인은 기존 정제 유지
+  const bar = normalizeVisual({
+    kind: 'chart', chart: 'bar', title: '영업이익',
+    series: [{ t: '2025-Q3', v: 12.2 }, { t: '2025-Q4', v: null, label: '확인중' }, { t: '2026-Q1', v: 57.2 }],
+  });
+  assert(bar !== null && bar.series!.length === 3 && bar.series![1].v === null, '막대 null 슬롯 보존');
+  assert(numericCount(bar.series) === 2, 'numericCount 는 갭 제외');
+  const gaps = cleanSeriesKeepGaps([{ t: 'a', v: 1 }, { t: 'b', v: null }, { t: 'b', v: null }, { t: 'c', v: 2 }]);
+  assert(gaps.length === 3, 'keepGaps dedupe + 갭 유지');
 }
 
 console.log('ALL LOGIC CHECKS PASSED');

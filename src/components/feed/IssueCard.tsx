@@ -2,9 +2,16 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { DeltaPill } from '@/components/common/DeltaPill';
-import type { IssueCard as IssueCardType } from '@/data/types';
-import { font, radius, spacing, typography, useTheme } from '@/theme';
+import { copy } from '@/constants/copy';
+import type { IssueCard as IssueCardType, PeriodTier } from '@/data/types';
+import { font, radius, spacing, tint, typography, useTheme } from '@/theme';
 import { relativeTime } from '@/utils/format';
+
+const TIER_LABEL: Record<PeriodTier, string> = {
+  weekly: copy.tierWeekly,
+  monthly: copy.tierMonthly,
+  yearly: copy.tierYearly,
+};
 
 interface Props {
   issue: IssueCardType;
@@ -20,6 +27,9 @@ interface Props {
 export function IssueCard({ issue, read, onPress }: Props) {
   const { theme } = useTheme();
   const stat = issue.headline_stat;
+  const tier = issue.period_tier;
+  // 이번 주 이슈만 accent 강조 — 훑을 때 '지금 뉴스'가 먼저 보이게
+  const tierHot = tier === 'weekly';
 
   return (
     <Pressable
@@ -30,14 +40,30 @@ export function IssueCard({ issue, read, onPress }: Props) {
         read && styles.read,
         pressed && styles.pressed,
       ]}>
-      {/* 사건 시각 — 모든 카드에서 우상단 고정 (v3: 처리 시각 대신 실제 사건 시각) */}
+      {/* 발생일 — 모든 카드에서 우상단 고정 (v4: 축약 라벨 우선, 없으면 상대 시각) */}
       <Text style={[styles.time, { color: theme.textMuted }]}>
-        {relativeTime(issue.event_at ?? issue.last_update)}
+        {issue.date_label_short ?? relativeTime(issue.event_at ?? issue.last_update)}
       </Text>
 
       <View style={styles.row}>
         <View style={styles.content}>
-          <CategoryBadge category={issue.category} />
+          <View style={styles.badgeRow}>
+            <CategoryBadge category={issue.category} />
+            {tier && (
+              <View
+                style={[
+                  styles.tierChip,
+                  {
+                    backgroundColor: tierHot ? theme.accent : tint(theme.accent, 0.08),
+                    borderColor: tierHot ? theme.accent : theme.border,
+                  },
+                ]}>
+                <Text style={[styles.tierLabel, { color: tierHot ? theme.onAccent : theme.textSecondary }]}>
+                  {TIER_LABEL[tier]}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
             {issue.title}
           </Text>
@@ -69,6 +95,14 @@ const styles = StyleSheet.create({
   time: { position: 'absolute', top: spacing.md, right: spacing.md, ...typography.caption },
   row: { flexDirection: 'row', gap: spacing.sm },
   content: { flex: 1, gap: spacing.sm },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  tierChip: {
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  tierLabel: { fontSize: 11, ...font(700) },
   title: { ...typography.cardTitle, paddingRight: spacing.xl },
   statRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   statValue: { fontSize: 14, ...font(700), fontVariant: ['tabular-nums'] },

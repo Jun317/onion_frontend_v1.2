@@ -33,7 +33,6 @@ export default function IssueViewerScreen() {
     if (router.canGoBack()) router.back();
     else router.replace('/');
   };
-  const openRelated = (id: string) => router.push({ pathname: '/issue/[id]', params: { id, sort } });
 
   if (loading && issues.length === 0) {
     return (
@@ -67,7 +66,7 @@ export default function IssueViewerScreen() {
       );
     }
     return (
-      <IssuePager issues={[fallback.detail]} initialIndex={0} onClose={close} onPressRelated={openRelated} />
+      <IssuePager issues={[fallback.detail]} initialIndex={0} onClose={close} />
     );
   }
 
@@ -76,7 +75,6 @@ export default function IssueViewerScreen() {
       issues={issues}
       initialIndex={Math.max(0, initialIndex)}
       onClose={close}
-      onPressRelated={openRelated}
     />
   );
 }
