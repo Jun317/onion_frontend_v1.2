@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Visual } from '@/data/types';
-import { font, radius, spacing, typography, useTheme } from '@/theme';
+import { cardShadow, font, radius, spacing, typography, useTheme } from '@/theme';
 
 interface Props {
   visual: Visual; // kind === 'table' (columns + rows 보장, normalizeVisual 통과분)
@@ -16,7 +16,7 @@ export function TableCard({ visual, width }: Props) {
   if (columns.length === 0 || rows.length === 0) return null;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border, width }]}>
+    <View style={[styles.card, { backgroundColor: theme.surface, width }]}>
       <Text style={[styles.title, { color: theme.text }]}>{visual.title}</Text>
       <View style={[styles.headerRow, { borderBottomColor: theme.hairline }]}>
         {columns.map((c, i) => (
@@ -56,8 +56,8 @@ export function TableCard({ visual, width }: Props) {
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
+    ...cardShadow,
     gap: spacing.xs,
   },
   title: { fontSize: 15, ...font(700), marginBottom: 2 },

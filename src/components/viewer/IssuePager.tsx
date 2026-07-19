@@ -7,7 +7,7 @@ import { cacheKeys, readCache, writeCache } from '@/data/cache';
 import type { IssueCard } from '@/data/types';
 import { usePrefs } from '@/lib/store';
 import { copy } from '@/constants/copy';
-import { font, radius, spacing, useTheme } from '@/theme';
+import { cardShadow, font, radius, spacing, useTheme } from '@/theme';
 
 import { IssuePage } from './IssuePage';
 
@@ -163,7 +163,7 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
         <Pressable
           onPress={onClose}
           hitSlop={10}
-          style={[styles.closeButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          style={[styles.closeButton, { backgroundColor: theme.surface }]}>
           <Ionicons name="close" size={18} color={theme.text} />
         </Pressable>
       </View>
@@ -192,16 +192,16 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   segments: { flex: 1, flexDirection: 'row', gap: spacing.xs },
-  segment: { flex: 1, height: 3, borderRadius: 2 },
+  segment: { flex: 1, height: 2.5, borderRadius: 2 },
   progressTrack: { flex: 1, height: 3, borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: 3, borderRadius: 2 },
   closeButton: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
+    ...cardShadow,
   },
   hintOverlay: {
     position: 'absolute',

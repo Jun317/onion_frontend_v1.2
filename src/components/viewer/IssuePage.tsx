@@ -1,6 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/common/Card';
@@ -12,10 +20,10 @@ import { GlossaryText } from '@/components/glossary/GlossaryText';
 import { copy } from '@/constants/copy';
 import type { HeadlineStat, IssueCard } from '@/data/types';
 import { useIssue } from '@/data/useIssue';
-import { categoryColor, font, radius, spacing, tint, typography, useTheme } from '@/theme';
+import { cardShadow, categoryColor, font, radius, spacing, tint, typography, useTheme } from '@/theme';
 import { formatNumber, relativeTime } from '@/utils/format';
 
-import { DetailSheet } from './DetailSheet';
+import { DetailPane } from './DetailPane';
 
 /**
  * headline_stat 부재 시 상세 anchors[0] 로 파생하는 폴백 스탯.
@@ -55,9 +63,10 @@ interface Props {
 }
 
 /**
- * 이슈 한 페이지 = 히어로 단일 화면 + "더 알아보기" 바텀시트.
- * 배경은 카테고리 색 7% 틴트, 우상단에 이슈 아이콘을 크게 깔아 분위기를 만든다.
- * 기존 가로 2페이지(히어로↔더보기) 구조는 제거 — 제스처 축은 세로 하나.
+ * 이슈 한 페이지 = 가로 2페이지 (① 히어로 ↔ ② 상세) — 옆으로 넘기면 자세한 내용.
+ * v4.1: '더 알아보기' Modal 시트를 페이지 전환으로 대체 — Modal 중첩(상세+용어 시트)이
+ * Android 에서 화면 프리즈를 일으키던 문제의 구조적 해결.
+ * 상세 페이지에 있는 동안은 부모 세로 페이저를 잠근다 (onDetailOpenChange).
  */
 export function IssuePage({
   card,
@@ -73,115 +82,140 @@ export function IssuePage({
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { detail, error, retry } = useIssue(card.id, isActive);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const hScrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    onDetailOpenChange(sheetOpen);
-  }, [sheetOpen, onDetailOpenChange]);
+    onDetailOpenChange(page > 0);
+  }, [page, onDetailOpenChange]);
+
+  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setPage(Math.round(e.nativeEvent.contentOffset.x / width));
+  };
+  const goToPage = (p: number) => hScrollRef.current?.scrollTo({ x: p * width, animated: true });
 
   const glossary = detail?.glossary ?? [];
   const whyNow = detail?.why_now ?? card.why_now;
-  // 히어로 밀도 보장: headline_stat 이 없으면 상세의 첫 앵커로 스탯을 파생 —
-  // 스탯·차트·왜중요 전부 빠져 화면 하단이 비는 "데드스페이스" 방지 (검증 보고서 P1)
+  // 히어로 밀도 보장: headline_stat 이 없으면 상세의 첫 앵커로 스탯을 파생
   const stat = card.headline_stat ?? detail?.headline_stat ?? deriveStat(detail?.anchors);
   const impactLine = detail?.impact_line ?? card.impact_line;
-  // 시점 배지 이원화: 주 표기 = 사건 시각, 보조 = 카드 업데이트 (1시간 이상 벌어질 때만)
   const eventAt = card.event_at ?? card.last_update;
   const showUpdated =
     !card.date_label &&
     !!card.event_at &&
     new Date(card.last_update).getTime() - new Date(card.event_at).getTime() > 60 * 60_000;
-  const background = tint(categoryColor(card.category), 0.07);
+  const background = tint(categoryColor(card.category), 0.05);
+  const bottomBarHeight = insets.bottom + 64;
 
   return (
     <View style={[styles.page, { width, height, backgroundColor: background }]}>
-      {/* 히어로 배경 아이콘 — 항상 표시, 제목이 앞 (zIndex) */}
-      {!!card.icon && (
-        <Text style={styles.bgIcon} accessible={false}>
-          {card.icon}
-        </Text>
-      )}
-
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.topRow}>
-          <CategoryBadge category={card.category} size="md" />
-          <View style={styles.timeCol}>
-            <Text style={[styles.time, { color: theme.textMuted }]} numberOfLines={1}>
-              {card.date_label ?? relativeTime(eventAt)}
-            </Text>
-            {showUpdated && (
-              <Text style={[styles.timeSub, { color: theme.textMuted }]}>
-                {copy.updatedAt(relativeTime(card.last_update))}
+        ref={hScrollRef}
+        horizontal
+        pagingEnabled
+        bounces={false}
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onMomentumEnd}
+        nestedScrollEnabled>
+        {/* ① 히어로 — 블록 사이를 유연 간격으로 벌려 하단 공백 제거 */}
+        <ScrollView
+          style={{ width }}
+          contentContainerStyle={[styles.heroContent, { minHeight: height - bottomBarHeight }]}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled>
+          <View style={styles.topRow}>
+            <CategoryBadge category={card.category} size="md" />
+            <View style={styles.timeCol}>
+              <Text style={[styles.time, { color: theme.textMuted }]} numberOfLines={1}>
+                {card.date_label ?? relativeTime(eventAt)}
               </Text>
-            )}
+              {showUpdated && (
+                <Text style={[styles.timeSub, { color: theme.textMuted }]}>
+                  {copy.updatedAt(relativeTime(card.last_update))}
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
 
-        <Text style={[styles.title, { color: theme.text }]}>{card.title}</Text>
+          <Text style={[styles.title, { color: theme.text }]}>{card.title}</Text>
 
-        {card.key_stats && card.key_stats.length > 0 ? (
-          <KeyStatTiles stats={card.key_stats} />
-        ) : (
-          stat && <HeroStat stat={stat} />
-        )}
+          {card.one_liner !== card.title && (
+            <GlossaryText
+              text={card.one_liner}
+              glossary={glossary}
+              style={[styles.oneLiner, { color: theme.textSecondary }]}
+            />
+          )}
 
-        {card.one_liner !== card.title && (
-          <GlossaryText
-            text={card.one_liner}
-            glossary={glossary}
-            style={[styles.oneLiner, { color: theme.textSecondary }]}
-          />
-        )}
+          <View style={styles.flexGap} />
 
-        {detail?.visual && <MiniChart visual={detail.visual} width={width - spacing.md * 2} />}
+          {card.key_stats && card.key_stats.length > 0 ? (
+            <KeyStatTiles stats={card.key_stats} />
+          ) : (
+            stat && <HeroStat stat={stat} />
+          )}
 
-        {!!whyNow && (
-          <Card style={styles.whyNow}>
-            <Text style={styles.whyNowEmoji}>💡</Text>
-            <View style={styles.whyNowBody}>
-              <Text style={[styles.whyNowLabel, { color: theme.textMuted }]}>{copy.whyNow}</Text>
+          <View style={styles.flexGap} />
+
+          {detail?.visual && (
+            <Card style={styles.chartCard}>
+              <MiniChart visual={detail.visual} width={width - spacing.md * 4} />
+            </Card>
+          )}
+
+          <View style={styles.flexGap} />
+
+          {!!whyNow && (
+            <Card style={styles.calloutCard}>
+              <Text style={[styles.calloutLabel, { color: theme.textMuted }]}>{copy.whyNow}</Text>
               <GlossaryText
                 text={whyNow}
                 glossary={glossary}
-                style={[
-                  typography.body,
-                  { color: theme.textSecondary },
-                  // 스탯·차트가 모두 없으면 이 카드가 히어로의 중심 — 본문을 키운다
-                  !stat && !detail?.visual && styles.whyNowPromoted,
-                ]}
+                style={[typography.body, { color: theme.textSecondary }]}
               />
-            </View>
-          </Card>
-        )}
+            </Card>
+          )}
 
-        {!!impactLine && (
-          <Card style={[styles.impact, { backgroundColor: tint(theme.accent, 0.08) }]}>
-            <Text style={styles.whyNowEmoji}>👛</Text>
-            <View style={styles.whyNowBody}>
-              <Text style={[styles.whyNowLabel, { color: theme.accent }]}>{copy.impactLine}</Text>
+          {!!impactLine && (
+            <Card style={styles.calloutCard}>
+              <Text style={[styles.calloutLabel, { color: theme.accent }]}>{copy.impactLine}</Text>
               <GlossaryText
                 text={impactLine}
                 glossary={glossary}
-                style={[typography.body, { color: theme.text }]}
+                style={[styles.impactText, { color: theme.text }]}
               />
-            </View>
-          </Card>
-        )}
+            </Card>
+          )}
+        </ScrollView>
+
+        {/* ② 상세 — 같은 배경 위 비모달 페인 */}
+        <DetailPane
+          card={card}
+          detail={detail}
+          error={error}
+          onRetry={retry}
+          width={width}
+          bottomInset={bottomBarHeight}
+        />
       </ScrollView>
 
-      {/* 하단 고정: 더 알아보기 + 위치 안내 + ↑↓ 보조 버튼 */}
+      {/* 하단 고정: 스와이프 힌트(탭 = 페이지 전환) + 위치 + ↑↓ */}
       <View style={[styles.bottom, { paddingBottom: insets.bottom + spacing.sm }]}>
-        <Pressable
-          onPress={() => setSheetOpen(true)}
-          style={({ pressed }) => [
-            styles.learnMore,
-            { backgroundColor: theme.accent },
-            pressed && { opacity: 0.7 },
-          ]}>
-          <Text style={[styles.learnMoreLabel, { color: theme.onAccent }]}>{copy.learnMore}</Text>
+        <Pressable onPress={() => goToPage(page === 0 ? 1 : 0)} hitSlop={6} style={styles.hintRow}>
+          <View style={styles.dots}>
+            {[0, 1].map((i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  { backgroundColor: i === page ? theme.accent : theme.axis },
+                ]}
+              />
+            ))}
+          </View>
+          <Text style={[styles.hint, { color: theme.textSecondary }]}>
+            {page === 0 ? copy.swipeToDetail : copy.swipeToSummary}
+          </Text>
         </Pressable>
         <View style={styles.navRow}>
           <Text style={[styles.position, { color: theme.textMuted }]}>
@@ -192,78 +226,59 @@ export function IssuePage({
               onPress={onPrev}
               disabled={index === 0}
               hitSlop={8}
-              style={[styles.navButton, { backgroundColor: theme.surface, borderColor: theme.border }, index === 0 && styles.navDisabled]}>
+              style={[styles.navButton, { backgroundColor: theme.surface }, index === 0 && styles.navDisabled]}>
               <Ionicons name="chevron-up" size={16} color={theme.text} />
             </Pressable>
             <Pressable
               onPress={onNext}
               disabled={index === total - 1}
               hitSlop={8}
-              style={[styles.navButton, { backgroundColor: theme.surface, borderColor: theme.border }, index === total - 1 && styles.navDisabled]}>
+              style={[styles.navButton, { backgroundColor: theme.surface }, index === total - 1 && styles.navDisabled]}>
               <Ionicons name="chevron-down" size={16} color={theme.text} />
             </Pressable>
           </View>
         </View>
       </View>
-
-      <DetailSheet
-        visible={sheetOpen}
-        card={card}
-        detail={detail}
-        error={error}
-        onRetry={retry}
-        onClose={() => setSheetOpen(false)}
-        width={width}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   page: { overflow: 'hidden' },
-  // top 34 / right -18 / 160px / opacity 0.1 — 스크롤 컨테이너 밖(고정)에 둔다
-  bgIcon: {
-    position: 'absolute',
-    top: 34,
-    right: -18,
-    fontSize: 160,
-    lineHeight: 176,
-    opacity: 0.1,
-    zIndex: 0,
+  // paddingTop 48 = 페이저 상단 오버레이(진행 세그먼트+닫기)와 겹침 방지.
+  // flexGap 스페이서가 남는 세로 공간을 블록 사이에 배분 — 하단 공백 대신 호흡으로.
+  heroContent: {
+    paddingHorizontal: spacing.md,
+    paddingTop: 48,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
   },
-  scroll: { flex: 1, zIndex: 1 },
-  // paddingTop 48 = 페이저 상단 오버레이(진행 세그먼트+닫기)와 겹침 방지
-  content: { paddingHorizontal: spacing.md, paddingTop: 48, paddingBottom: spacing.md, gap: spacing.md },
+  flexGap: { flexGrow: 1, minHeight: 2 },
   topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  timeCol: { alignItems: 'flex-end', gap: 1 },
+  timeCol: { alignItems: 'flex-end', gap: 1, flexShrink: 1, marginLeft: spacing.sm },
   time: { ...typography.caption },
   timeSub: { ...typography.micro, opacity: 0.8 },
   title: { ...typography.viewerTitle },
   oneLiner: { fontSize: 16, lineHeight: 25, ...font(400) },
-  whyNow: { flexDirection: 'row', gap: spacing.sm },
-  whyNowEmoji: { fontSize: 18 },
-  whyNowBody: { flex: 1, gap: 2 },
-  whyNowLabel: { ...typography.caption, ...font(700) },
-  whyNowPromoted: { fontSize: 17, lineHeight: 26 },
-  impact: { flexDirection: 'row', gap: spacing.sm },
-  bottom: { paddingHorizontal: spacing.md, gap: spacing.sm, zIndex: 1 },
-  learnMore: {
-    height: 52,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  learnMoreLabel: { fontSize: 16, ...font(700) },
+  chartCard: { paddingVertical: spacing.md },
+  calloutCard: { gap: 6 },
+  calloutLabel: { fontSize: 13, ...font(700), letterSpacing: 0.2 },
+  impactText: { fontSize: 15.5, lineHeight: 24, ...font(500) },
+  bottom: { paddingHorizontal: spacing.md, gap: spacing.xs, zIndex: 1 },
+  hintRow: { alignItems: 'center', gap: 5, paddingVertical: 2 },
+  dots: { flexDirection: 'row', gap: 5 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  hint: { fontSize: 13, ...font(600) },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   position: { ...typography.caption },
   navButtons: { flexDirection: 'row', gap: spacing.sm },
   navButton: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
+    ...cardShadow,
   },
-  navDisabled: { opacity: 0.4 },
+  navDisabled: { opacity: 0.35 },
 });
