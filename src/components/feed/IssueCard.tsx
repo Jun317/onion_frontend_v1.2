@@ -4,7 +4,7 @@ import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { DeltaPill } from '@/components/common/DeltaPill';
 import { copy } from '@/constants/copy';
 import type { IssueCard as IssueCardType, PeriodTier } from '@/data/types';
-import { font, radius, spacing, tint, typography, useTheme } from '@/theme';
+import { cardShadow, font, radius, spacing, tint, typography, useTheme } from '@/theme';
 import { relativeTime } from '@/utils/format';
 
 const TIER_LABEL: Record<PeriodTier, string> = {
@@ -36,7 +36,7 @@ export function IssueCard({ issue, read, onPress }: Props) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        { backgroundColor: theme.surface, borderColor: theme.border },
+        { backgroundColor: theme.surface },
         read && styles.read,
         pressed && styles.pressed,
       ]}>
@@ -87,8 +87,8 @@ const styles = StyleSheet.create({
   card: {
     position: 'relative',
     borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
+    ...cardShadow,
   },
   pressed: { opacity: 0.7 },
   read: { opacity: 0.45 },

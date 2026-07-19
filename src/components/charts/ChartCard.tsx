@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Visual } from '@/data/types';
-import { spacing, useTheme } from '@/theme';
+import { cardShadow, spacing, useTheme } from '@/theme';
 import { periodRange } from '@/utils/format';
 
 import { BarGroupChart } from './BarGroupChart';
@@ -60,7 +60,7 @@ export function ChartCard({ visual, width }: Props) {
   if (!body) return null;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border, width }]}>
+    <View style={[styles.card, { backgroundColor: theme.surface, width }]}>
       <Text style={[styles.title, { color: theme.text }]}>{visual.title}</Text>
       {body}
       {!!visual.note && <Text style={[styles.note, { color: theme.textMuted }]}>{visual.note}</Text>}
@@ -79,8 +79,8 @@ export function ChartCard({ visual, width }: Props) {
 const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
+    ...cardShadow,
     gap: spacing.sm,
   },
   title: { fontSize: 15, fontWeight: '700' },

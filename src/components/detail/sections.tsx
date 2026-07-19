@@ -4,11 +4,11 @@ import { Card } from '@/components/common/Card';
 import { GlossaryText } from '@/components/glossary/GlossaryText';
 import { copy } from '@/constants/copy';
 import type { EffectRow, GlossaryEntry } from '@/data/types';
-import { font, radius, spacing, tint, typography, useTheme } from '@/theme';
+import { cardShadow, font, radius, spacing, tint, typography, useTheme } from '@/theme';
 
 function SectionTitle({ children }: { children: string }) {
   const { theme } = useTheme();
-  return <Text style={[styles.sectionTitle, { color: theme.text }]}>{children}</Text>;
+  return <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>{children}</Text>;
 }
 
 /** 무슨 일이에요? — 1~3줄 불릿을 흰 카드에 담아 본문임을 분명히 (목업 톤) */
@@ -56,7 +56,7 @@ export function EffectRowsSection({
   return (
     <View style={styles.section}>
       <SectionTitle>{copy.sectionEffects}</SectionTitle>
-      <View style={[styles.effectsBox, { backgroundColor: theme.accentSoft }]}>
+      <View style={styles.effectsBox}>
         {rows.length > 0
           ? rows.map((r, i) => (
               <View key={i} style={[styles.effectRow, { backgroundColor: theme.surface }]}>
@@ -117,21 +117,18 @@ export function TipsSection({ tips, glossary }: { tips: string[]; glossary: Glos
 
 const styles = StyleSheet.create({
   section: { gap: spacing.sm },
-  sectionTitle: { fontSize: 17, ...font(800), marginBottom: 2 },
+  sectionTitle: { fontSize: 13, ...font(700), letterSpacing: 0.2, marginLeft: 2 },
   detailsCard: { gap: spacing.sm },
   bulletRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   bulletDot: { width: 5, height: 5, borderRadius: 3, marginTop: 9, opacity: 0.6 },
-  effectsBox: {
-    borderRadius: radius.card,
-    padding: spacing.sm,
-    gap: spacing.sm,
-  },
+  effectsBox: { gap: spacing.sm },
   effectRow: {
     flexDirection: 'row',
     gap: spacing.sm,
     alignItems: 'flex-start',
-    borderRadius: radius.control,
-    padding: spacing.sm + 2,
+    borderRadius: radius.card,
+    padding: spacing.md,
+    ...cardShadow,
   },
   effectChip: {
     borderRadius: 8,

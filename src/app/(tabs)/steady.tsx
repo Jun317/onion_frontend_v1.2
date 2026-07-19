@@ -9,7 +9,7 @@ import { Wordmark } from '@/components/common/Wordmark';
 import { copy } from '@/constants/copy';
 import type { SteadyItem } from '@/data/types';
 import { useFeed } from '@/data/useFeed';
-import { font, radius, spacing, tint, typography, useTheme } from '@/theme';
+import { cardShadow, font, radius, spacing, tint, typography, useTheme } from '@/theme';
 
 /**
  * 스테디 — 계속 지켜봐야 할 장기 이슈 ('시리즈물').
@@ -42,7 +42,7 @@ export default function SteadyScreen() {
               onPress={() => router.push({ pathname: '/steady/[id]', params: { id: item.id } })}
               style={({ pressed }) => [
                 styles.card,
-                { backgroundColor: theme.surface, borderColor: theme.border },
+                { backgroundColor: theme.surface },
                 pressed && { opacity: 0.7 },
               ]}>
               <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
@@ -79,9 +79,9 @@ const styles = StyleSheet.create({
   card: {
     minHeight: 232, // 일반 카드 높이의 약 2배
     borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
     gap: spacing.md,
+    ...cardShadow,
   },
   cardTitle: { fontSize: 19, ...font(800), lineHeight: 26 },
   definition: { fontSize: 14, lineHeight: 21 },

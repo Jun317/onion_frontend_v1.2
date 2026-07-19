@@ -10,14 +10,14 @@ export { font, fontSources } from './fonts';
  * 시장 색 관례: 상승 = 빨강, 하락 = 파랑 (절대 반전 금지).
  */
 export const palette = {
-  background: '#f9f9f7', // 피드 페이지 (회색 확정)
-  surface: '#fcfcfb', // 카드·차트·시트
-  text: '#0b0b0b',
-  textSecondary: '#52514e',
-  textMuted: '#898781',
-  hairline: '#e1e0d9',
-  axis: '#c3c2b7',
-  border: 'rgba(11,11,11,0.10)',
+  background: '#f2f2f7', // 페이지 배경 — iOS systemGroupedBackground
+  surface: '#ffffff', // 카드·차트·시트
+  text: '#111113',
+  textSecondary: '#55555c',
+  textMuted: '#8e8e93', // iOS systemGray
+  hairline: '#e5e5ea',
+  axis: '#c7c7cc',
+  border: 'rgba(0,0,0,0.06)',
   accent: '#4a2586', // purple-700 — 유일한 브랜드 색
   accentSoft: '#e8ddf6', // 진행 세그먼트(지난)·effects 카드 배경
   onAccent: '#ffffff', // accent 배경 위 글자
@@ -120,9 +120,9 @@ export const allCategories = Object.keys(categoryColors) as Category[];
 export const typography = {
   wordmark: { fontSize: 26, ...font(900), letterSpacing: -0.5 },
   heroStat: { fontSize: 40, ...font(800), fontVariant: ['tabular-nums'] as ['tabular-nums'] },
-  viewerTitle: { fontSize: 24, ...font(800), lineHeight: 32 },
-  title: { fontSize: 20, ...font(700), lineHeight: 28 },
-  cardTitle: { fontSize: 17, ...font(700), lineHeight: 24 },
+  viewerTitle: { fontSize: 26, ...font(800), lineHeight: 34, letterSpacing: -0.5 },
+  title: { fontSize: 20, ...font(700), lineHeight: 28, letterSpacing: -0.3 },
+  cardTitle: { fontSize: 17, ...font(700), lineHeight: 24, letterSpacing: -0.2 },
   body: { fontSize: 15, ...font(400), lineHeight: 23 },
   caption: { fontSize: 13, ...font(400), lineHeight: 18 },
   micro: { fontSize: 11, ...font(400), lineHeight: 16 },
@@ -130,6 +130,18 @@ export const typography = {
 
 /** 간격은 4/8/16/24/32 만 사용 */
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 } as const;
+
+/**
+ * 카드 그림자 (iOS 느낌) — 면 분리를 헤어라인 대신 낮은 확산 그림자로.
+ * Android 는 elevation 폴백. 배경색이 있는 View 에만 적용할 것.
+ */
+export const cardShadow = {
+  shadowColor: '#000000',
+  shadowOpacity: 0.06,
+  shadowRadius: 14,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 3,
+} as const;
 
 /** 라운드 3단계: 카드/시트 16·20, 소형 컨트롤 12, 칩/필/배지 999 */
 export const radius = { card: 16, sheet: 20, control: 12, pill: 999 } as const;

@@ -16,7 +16,7 @@ import { copy } from '@/constants/copy';
 import type { SteadyTimelineEntry, Visual } from '@/data/types';
 import { normalizeVisual } from '@/data/normalize';
 import { useFeed } from '@/data/useFeed';
-import { font, radius, spacing, tint, typography, useTheme } from '@/theme';
+import { cardShadow, font, radius, spacing, tint, typography, useTheme } from '@/theme';
 
 function BlockTitle({ children }: { children: string }) {
   const { theme } = useTheme();
@@ -236,7 +236,7 @@ export default function SteadyViewerScreen() {
         <Pressable
           onPress={close}
           hitSlop={10}
-          style={[styles.closeButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          style={[styles.closeButton, { backgroundColor: theme.surface }]}>
           <Ionicons name="close" size={18} color={theme.text} />
         </Pressable>
       </View>
@@ -281,11 +281,11 @@ const styles = StyleSheet.create({
   disclaimer: { fontSize: 11, textAlign: 'center', marginTop: spacing.md },
   topOverlay: { position: 'absolute', right: spacing.md, alignItems: 'flex-end' },
   closeButton: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
+    ...cardShadow,
   },
 });
