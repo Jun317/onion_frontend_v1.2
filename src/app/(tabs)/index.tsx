@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CategoryChip } from '@/components/common/CategoryChip';
@@ -10,6 +10,7 @@ import { FreshnessBar } from '@/components/feed/FreshnessBar';
 import { IssueCard } from '@/components/feed/IssueCard';
 import { SortToggle } from '@/components/feed/SortToggle';
 import { copy } from '@/constants/copy';
+import { feedbackUrl } from '@/constants/links';
 import type { Category, SortKey } from '@/data/types';
 import { useFeed } from '@/data/useFeed';
 import { ATTENDANCE_GOAL, usePrefs } from '@/lib/store';
@@ -99,11 +100,21 @@ export default function IssueListScreen() {
           }
           ListFooterComponent={
             feed ? (
-              <Text style={[styles.attribution, { color: theme.textMuted }]}>
-                {feed.attribution}
-                {'\n'}
-                {copy.disclaimer}
-              </Text>
+              <View>
+                <Pressable
+                  onPress={() => Linking.openURL(feedbackUrl())}
+                  style={({ pressed }) => [styles.feedback, pressed && { opacity: 0.7 }]}>
+                  <Text style={[styles.feedbackLabel, { color: theme.accent }]}>{copy.feedback}</Text>
+                  <Text style={[styles.feedbackHint, { color: theme.textMuted }]}>
+                    {copy.feedbackHint}
+                  </Text>
+                </Pressable>
+                <Text style={[styles.attribution, { color: theme.textMuted }]}>
+                  {feed.attribution}
+                  {'\n'}
+                  {copy.disclaimer}
+                </Text>
+              </View>
             ) : null
           }
         />
@@ -130,5 +141,8 @@ const styles = StyleSheet.create({
   },
   progress: { fontSize: 12, ...font(600) },
   list: { padding: spacing.md, paddingBottom: spacing.xl },
-  attribution: { fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: spacing.lg },
+  attribution: { fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: spacing.md },
+  feedback: { alignItems: 'center', gap: 2, marginTop: spacing.lg },
+  feedbackLabel: { fontSize: 14, ...font(700) },
+  feedbackHint: { fontSize: 12 },
 });

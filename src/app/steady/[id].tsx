@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChartCard } from '@/components/charts/ChartCard';
@@ -43,7 +42,7 @@ export default function SteadyViewerScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const { feed } = useFeed('importance');
-  const [width, setWidth] = useState(0);
+  const { width } = useWindowDimensions();
 
   const item = feed?.steady?.find((s) => s.id === params.id);
   const issueTitles = new Map((feed?.issues ?? []).map((i) => [i.id, i.title]));
@@ -72,9 +71,7 @@ export default function SteadyViewerScreen() {
   const contentWidth = width - spacing.md * 2;
 
   return (
-    <View
-      style={[styles.fill, { backgroundColor: background }]}
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+    <View style={[styles.fill, { backgroundColor: background }]}>
       {width > 0 && (
         <ScrollView
           contentContainerStyle={[styles.page, { paddingTop: insets.top + 56 }]}

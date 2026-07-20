@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/common/Card';
@@ -8,6 +8,7 @@ import { CategoryChip } from '@/components/common/CategoryChip';
 import { StreakCard } from '@/components/common/StreakCard';
 import { Wordmark } from '@/components/common/Wordmark';
 import { copy } from '@/constants/copy';
+import { feedbackUrl } from '@/constants/links';
 import { useFeed } from '@/data/useFeed';
 import { usePrefs } from '@/lib/store';
 import { allCategories, categoryLabel, font, spacing, typography, useTheme } from '@/theme';
@@ -67,6 +68,18 @@ export default function MyScreen() {
           </Card>
         </Pressable>
 
+        <Pressable
+          onPress={() => Linking.openURL(feedbackUrl())}
+          style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+          <Card style={styles.readRow}>
+            <View style={styles.feedbackCol}>
+              <Text style={[styles.readLabel, { color: theme.accent }]}>{copy.feedback}</Text>
+              <Text style={[styles.feedbackHint, { color: theme.textMuted }]}>{copy.feedbackHint}</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={theme.accent} />
+          </Card>
+        </Pressable>
+
         <Text style={[styles.attribution, { color: theme.textMuted }]}>
           {feed?.attribution ? `${feed.attribution}\n` : ''}
           {copy.disclaimer}
@@ -86,5 +99,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
   readRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   readLabel: { fontSize: 16, ...font(600) },
+  feedbackCol: { gap: 2, flex: 1 },
+  feedbackHint: { fontSize: 12 },
   attribution: { fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: spacing.lg },
 });

@@ -55,6 +55,10 @@ export const copy = {
   myWords: (n: number) => `내 단어장 ${n}`,
   myWordsEmpty: '용어 해설에서 저장한 단어가 여기 모여요',
 
+  // 베타 피드백
+  feedback: '피드백 남기기',
+  feedbackHint: '1분이면 돼요 — 의견이 onion을 만들어요',
+
   // 출석 · 리텐션
   streakTitle: (n: number) => (n > 0 ? `🔥 ${n}일 연속 출석 중` : '오늘부터 출석을 시작해 보세요'),
   streakHint: (goal: number) => `하루 ${goal}개 이슈를 읽으면 출석이 이어져요`,
