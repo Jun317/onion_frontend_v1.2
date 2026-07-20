@@ -1,0 +1,48 @@
+# onion MVP 웹 배포 — Expo 웹 내보내기 → GitHub Pages (베타 테스트용, 무료)
+# 접속 URL: https://jun317.github.io/onion_frontend_v1.2/
+# 배포 중단(테스트 종료): 이 워크플로를 삭제하거나 Settings → Pages 에서 비활성화
+name: deploy-web
+
+on:
+  push:
+    branches: [claude/onion-news-app-frontend-fg2rbr]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Export web build
+        run: npx expo export --platform web
+      # SPA 라우팅 폴백 — 새로고침/딥링크 시 Pages 404 대신 앱이 뜨도록
+      - run: cp dist/index.html dist/404.html
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
