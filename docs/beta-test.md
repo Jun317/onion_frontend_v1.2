@@ -41,6 +41,12 @@
 
 ## 3. 배포가 동작하는 방식
 
+**최초 1회 설정 (저장소 주인만, 30초):** GitHub → 저장소 **Settings → Pages →
+"Build and deployment" → Source 를 "GitHub Actions" 로 선택**.
+(봇/워크플로 토큰은 Pages 를 처음 켜는 권한이 없어, 이 토글만 사람이 한 번 눌러야 해요.
+백엔드 저장소에서 Pages 를 켰던 것과 같은 설정입니다.)
+
+그 뒤부터는:
 - `.github/workflows/deploy-web.yml` 이 기본 브랜치 push 마다 자동으로:
   Expo 웹 빌드(`npx expo export -p web`) → GitHub Pages 배포.
 - 수동 재배포: GitHub → Actions → deploy-web → Run workflow.

@@ -31,9 +31,9 @@ jobs:
         run: npx expo export --platform web
       # SPA 라우팅 폴백 — 새로고침/딥링크 시 Pages 404 대신 앱이 뜨도록
       - run: cp dist/index.html dist/404.html
+      # Pages 는 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 한 번만 켜두면 됨
+      # (봇 토큰은 최초 활성화 권한이 없어 enablement 자동 생성이 막힘 — 최초 1회 수동 설정)
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
