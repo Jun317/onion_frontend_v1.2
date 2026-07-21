@@ -1,6 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View, type ViewToken } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+  type ViewToken,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { cacheKeys, readCache, writeCache } from '@/data/cache';
@@ -21,6 +30,15 @@ interface Props {
 const NAV_COOLDOWN_MS = 550;
 /** 이슈 수가 이보다 많으면 세그먼트 대신 연속 진행 바로 폴백 */
 const MAX_SEGMENTS = 20;
+
+// react-native-web 전용 CSS 스크롤 스냅 — 브라우저가 한 스와이프/휠에 이슈 한 개씩 스냅하도록.
+// (RN 의 snapToInterval·disableIntervalMomentum 은 웹에서 네이티브처럼 동작하지 않음)
+const WEB_SNAP_CONTAINER =
+  Platform.OS === 'web' ? ({ scrollSnapType: 'y mandatory' } as unknown as ViewStyle) : undefined;
+const WEB_SNAP_CHILD =
+  Platform.OS === 'web'
+    ? ({ scrollSnapAlign: 'start', scrollSnapStop: 'always' } as unknown as ViewStyle)
+    : undefined;
 
 /** 스토리형 진행 표시 — 지난 = accent-soft · 현재 = accent · 이후 = hairline */
 function ProgressSegments({ active, total }: { active: number; total: number }) {
@@ -67,6 +85,7 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
   const { markRead } = usePrefs();
   const listRef = useRef<FlatList<IssueCard>>(null);
   const lastNavAt = useRef(0);
+  const didInitialScroll = useRef(false);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [verticalLocked, setVerticalLocked] = useState(false);
@@ -124,7 +143,7 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
           data={issues}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
-            <View style={{ paddingTop: insets.top, height: size.height }}>
+            <View style={[{ paddingTop: insets.top, height: size.height }, WEB_SNAP_CHILD]}>
               <IssuePage
                 card={item}
                 isActive={Math.abs(index - activeIndex) <= 1}
@@ -138,6 +157,7 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
               />
             </View>
           )}
+          style={WEB_SNAP_CONTAINER}
           pagingEnabled
           decelerationRate="fast"
           snapToInterval={size.height}
@@ -150,6 +170,16 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
             offset: size.height * index,
             index,
           })}
+          // react-native-web 는 initialScrollIndex 를 무시한다 → 콘텐츠 크기 확정 시점에
+          // 탭한 이슈 위치로 1회 명령형 스크롤(웹). getItemLayout 덕에 오프셋 계산이 정확.
+          onContentSizeChange={() => {
+            if (Platform.OS !== 'web' || didInitialScroll.current) return;
+            const target = Math.min(initialIndex, issues.length - 1);
+            didInitialScroll.current = true;
+            if (target > 0) {
+              listRef.current?.scrollToOffset({ offset: target * size.height, animated: false });
+            }
+          }}
           windowSize={3}
           maxToRenderPerBatch={2}
           onViewableItemsChanged={onViewableItemsChanged}

@@ -89,8 +89,11 @@ export function IssuePage({
     onDetailOpenChange(page > 0);
   }, [page, onDetailOpenChange]);
 
-  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setPage(Math.round(e.nativeEvent.contentOffset.x / width));
+  // 현재 페이지(0=히어로,1=상세) 갱신 — 웹 트랙패드/휠은 momentum 이벤트가 없어서
+  // onScroll 로도 갱신해야 닷·세로 잠금(onDetailOpenChange)이 정확히 따라온다.
+  const syncPage = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const p = Math.round(e.nativeEvent.contentOffset.x / width);
+    setPage((prev) => (prev === p ? prev : p));
   };
   const goToPage = (p: number) => hScrollRef.current?.scrollTo({ x: p * width, animated: true });
 
@@ -115,7 +118,9 @@ export function IssuePage({
         pagingEnabled
         bounces={false}
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onMomentumEnd}
+        onScroll={syncPage}
+        scrollEventThrottle={32}
+        onMomentumScrollEnd={syncPage}
         nestedScrollEnabled>
         {/* ① 히어로 — 블록 사이를 유연 간격으로 벌려 하단 공백 제거 */}
         <ScrollView
