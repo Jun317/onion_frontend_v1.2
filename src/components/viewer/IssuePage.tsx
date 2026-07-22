@@ -27,12 +27,18 @@ import { formatNumber, relativeTime } from '@/utils/format';
 
 import { DetailPane } from './DetailPane';
 
-// 웹(모바일 Safari 포함) 가로 페이저 자식이 한 번에 한 페이지로 스냅되도록 —
-// 스냅 지점 사이에서 멈추는(가운데 정지) 문제 방지. 네이티브는 pagingEnabled 가 처리.
+// 웹(모바일 Safari 포함) 가로 페이저: 세로 페이저에 통한 것과 동일하게 RN JS 페이징을 끄고
+// 순수 CSS 스냅만 사용(둘이 겹치면 "한 번 걸림"이 생김). 컨테이너 = x mandatory,
+// 자식 = snap start + stop always → 한 스와이프에 한 페이지로 확실히 스냅.
+const WEB_HSNAP_CONTAINER =
+  Platform.OS === 'web'
+    ? ({ scrollSnapType: 'x mandatory', scrollBehavior: 'auto' } as unknown as ViewStyle)
+    : undefined;
 const WEB_HSNAP_CHILD =
   Platform.OS === 'web'
     ? ({ scrollSnapAlign: 'start', scrollSnapStop: 'always' } as unknown as ViewStyle)
     : undefined;
+const IS_WEB = Platform.OS === 'web';
 
 /**
  * headline_stat 부재 시 상세 anchors[0] 로 파생하는 폴백 스탯.
@@ -124,7 +130,8 @@ export function IssuePage({
       <ScrollView
         ref={hScrollRef}
         horizontal
-        pagingEnabled
+        pagingEnabled={!IS_WEB}
+        style={WEB_HSNAP_CONTAINER}
         bounces={false}
         showsHorizontalScrollIndicator={false}
         onScroll={syncPage}

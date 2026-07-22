@@ -89,7 +89,9 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
   const { markRead } = usePrefs();
   const listRef = useRef<FlatList<IssueCard>>(null);
   const lastNavAt = useRef(0);
-  const didInitialScroll = useRef(false);
+  // 사용자가 실제로 뷰어를 조작(스와이프/버튼)하기 전까지 true 가 아님.
+  // 그 전에는 어떤 이유로 스크롤이 리셋돼도 탭한 이슈 위치로 계속 되돌린다.
+  const userTookOver = useRef(false);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [verticalLocked, setVerticalLocked] = useState(false);
@@ -108,19 +110,70 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
     if (id) markRead(id);
   }, [activeIndex, issues, markRead]);
 
-  // 웹: 초기 위치를 페인트 전에 확정 → 탭한 이슈에서 바로 시작, 이동 애니메이션("촤라락") 없음.
-  // react-native-web 은 initialScrollIndex 를 화면 스크롤에 반영하지 않으므로, 스크롤 DOM 노드의
-  // scrollTop 을 직접 설정한다. getItemLayout 으로 콘텐츠 전체 높이가 잡혀 오프셋이 정확하다.
-  useLayoutEffect(() => {
-    if (!IS_WEB || !size || didInitialScroll.current) return;
+  // 웹: 탭한 이슈 위치를 "핀 고정" — 사용자가 조작하기 전까지 계속 제자리로 되돌린다.
+  // 1회성이 아니라 매 렌더 + 예기치 않은 스크롤 드리프트마다 재적용하므로, 리셋 원인이
+  // 무엇이든(RNW initialScrollIndex 재스크롤 / useFeed 재검증 리렌더 / iOS Safari 앵커 리셋)
+  // 탭한 이슈에서 벗어나지 않는다. getItemLayout 으로 콘텐츠 전체 높이가 잡혀 오프셋이 정확.
+  const applyPin = useCallback(() => {
+    if (!IS_WEB || !size || userTookOver.current) return;
     const target = Math.min(initialIndex, issues.length - 1);
-    didInitialScroll.current = true;
     if (target <= 0) return;
     const offset = target * size.height;
     const node = listRef.current?.getScrollableNode?.() as { scrollTop?: number } | null;
-    if (node && typeof node.scrollTop === 'number') node.scrollTop = offset;
-    else listRef.current?.scrollToOffset({ offset, animated: false });
+    if (node && typeof node.scrollTop === 'number') {
+      if (Math.abs(node.scrollTop - offset) > 1) node.scrollTop = offset;
+    } else {
+      listRef.current?.scrollToOffset({ offset, animated: false });
+    }
   }, [size, initialIndex, issues.length]);
+
+  // 매 렌더 후(페인트 전) 재적용 — 리렌더로 스크롤이 초기화돼도 즉시 복구.
+  useLayoutEffect(() => {
+    applyPin();
+  });
+
+  // 안전장치: 조작 이벤트가 어떤 이유로 안 잡혀도 핀이 영구히 가두지 않도록 몇 초 뒤 자동 해제.
+  // 방어 대상 리셋(initialScrollIndex 재스크롤·리렌더·Safari 앵커)은 모두 마운트 직후 수백 ms 내
+  // 발생하므로 이 창(4초) 안에서 충분히 방어된다.
+  useEffect(() => {
+    if (!IS_WEB) return;
+    const t = setTimeout(() => {
+      userTookOver.current = true;
+    }, 4000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // 사용자가 아직 조작하지 않았는데 스크롤이 핀 위치에서 벗어나면(비동기 리셋) 되돌린다.
+  const onVScroll = useCallback(
+    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+      if (userTookOver.current || !IS_WEB || !size) return;
+      const target = Math.min(initialIndex, issues.length - 1);
+      if (target <= 0) return;
+      if (Math.abs(e.nativeEvent.contentOffset.y - target * size.height) > 2) applyPin();
+    },
+    [applyPin, size, initialIndex, issues.length],
+  );
+
+  // 실제 사용자 조작(드래그/플링/버튼) 시작 → 핀 해제, 이후 자유 이동.
+  const takeOver = useCallback(() => {
+    userTookOver.current = true;
+  }, []);
+
+  // 웹: 스크롤 DOM 노드에 원시 입력 리스너를 붙여 사용자의 첫 조작을 확실히 감지 → 핀 해제.
+  // (RNW onScrollBeginDrag 는 휠에선 안 뜨는 등 신뢰도가 낮아, touchstart/wheel/pointerdown 을
+  //  직접 듣는다. 모바일 Safari 의 스와이프는 touchstart 가 이동 전에 먼저 발화한다.)
+  useEffect(() => {
+    if (!IS_WEB) return;
+    const node = listRef.current?.getScrollableNode?.() as HTMLElement | null;
+    if (!node || typeof node.addEventListener !== 'function') return;
+    const release = () => {
+      userTookOver.current = true;
+    };
+    const opts = { passive: true } as AddEventListenerOptions;
+    const kinds = ['touchstart', 'wheel', 'pointerdown', 'keydown'];
+    kinds.forEach((k) => node.addEventListener(k, release, opts));
+    return () => kinds.forEach((k) => node.removeEventListener(k, release, opts));
+  }, [size]);
 
   const dismissHint = useCallback(() => {
     setShowHint(false);
@@ -132,6 +185,7 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
       const now = Date.now();
       if (now - lastNavAt.current < NAV_COOLDOWN_MS) return;
       lastNavAt.current = now;
+      userTookOver.current = true; // 버튼 이동도 사용자 조작 → 핀 해제
       listRef.current?.scrollToIndex({ index, animated: true });
     },
     [],
@@ -184,6 +238,10 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
           disableIntervalMomentum={!IS_WEB}
           showsVerticalScrollIndicator={false}
           scrollEnabled={!verticalLocked}
+          onScroll={onVScroll}
+          scrollEventThrottle={16}
+          onScrollBeginDrag={takeOver}
+          onMomentumScrollBegin={takeOver}
           initialScrollIndex={Math.min(initialIndex, issues.length - 1)}
           getItemLayout={(_, index) => ({
             length: size.height,
