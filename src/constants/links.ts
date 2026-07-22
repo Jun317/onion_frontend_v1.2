@@ -6,7 +6,7 @@
  * 그 폼으로 연결된다. 비어 있는 동안은 이메일(mailto) 폴백으로 동작한다.
  * 폼 만들기·권장 문항은 docs/beta-test.md 참고.
  */
-export const FEEDBACK_FORM_URL = '';
+export const FEEDBACK_FORM_URL = 'https://forms.gle/U5QjFuLcA2HpdePh9';
 
 const FEEDBACK_MAILTO =
   'mailto:junsangpark317@gmail.com?subject=' + encodeURIComponent('onion 피드백');

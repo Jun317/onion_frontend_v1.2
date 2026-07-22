@@ -11,7 +11,7 @@ import { copy } from '@/constants/copy';
 import { feedbackUrl } from '@/constants/links';
 import { useFeed } from '@/data/useFeed';
 import { usePrefs } from '@/lib/store';
-import { allCategories, categoryLabel, font, spacing, typography, useTheme } from '@/theme';
+import { allCategories, cardShadow, categoryLabel, font, radius, spacing, typography, useTheme } from '@/theme';
 
 /** 마이 — 출석 스트릭 + 관심 분야 선택 + 읽은 이슈 + 단어장 */
 export default function MyScreen() {
@@ -29,6 +29,21 @@ export default function MyScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        {/* 베타: 피드백을 최상단에 크게 강조 (테스터 동선 1순위) */}
+        <Pressable
+          onPress={() => Linking.openURL(feedbackUrl())}
+          style={({ pressed }) => [pressed && { opacity: 0.9 }]}>
+          <View style={[styles.feedbackHero, { backgroundColor: theme.accent }]}>
+            <View style={styles.feedbackHeroText}>
+              <Text style={styles.feedbackHeroTitle}>{copy.feedback}</Text>
+              <Text style={styles.feedbackHeroHint}>{copy.feedbackHint}</Text>
+            </View>
+            <View style={styles.feedbackHeroIcon}>
+              <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
+            </View>
+          </View>
+        </Pressable>
+
         <StreakCard />
 
         <Card style={styles.interestsCard}>
@@ -68,18 +83,6 @@ export default function MyScreen() {
           </Card>
         </Pressable>
 
-        <Pressable
-          onPress={() => Linking.openURL(feedbackUrl())}
-          style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
-          <Card style={styles.readRow}>
-            <View style={styles.feedbackCol}>
-              <Text style={[styles.readLabel, { color: theme.accent }]}>{copy.feedback}</Text>
-              <Text style={[styles.feedbackHint, { color: theme.textMuted }]}>{copy.feedbackHint}</Text>
-            </View>
-            <Ionicons name="open-outline" size={18} color={theme.accent} />
-          </Card>
-        </Pressable>
-
         <Text style={[styles.attribution, { color: theme.textMuted }]}>
           {feed?.attribution ? `${feed.attribution}\n` : ''}
           {copy.disclaimer}
@@ -99,7 +102,25 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
   readRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   readLabel: { fontSize: 16, ...font(600) },
-  feedbackCol: { gap: 2, flex: 1 },
-  feedbackHint: { fontSize: 12 },
+  feedbackHero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderRadius: radius.card,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    ...cardShadow,
+  },
+  feedbackHeroText: { flex: 1, gap: 3 },
+  feedbackHeroTitle: { fontSize: 19, ...font(800), color: '#fff', letterSpacing: -0.2 },
+  feedbackHeroHint: { fontSize: 13, ...font(500), color: 'rgba(255,255,255,0.9)' },
+  feedbackHeroIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
   attribution: { fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: spacing.lg },
 });

@@ -57,7 +57,7 @@ export const copy = {
 
   // 베타 피드백
   feedback: '피드백 남기기',
-  feedbackHint: '1분이면 돼요 — 의견이 onion을 만들어요',
+  feedbackHint: '3분이면 돼요 — 의견이 onion을 만들어요',
 
   // 출석 · 리텐션
   streakTitle: (n: number) => (n > 0 ? `🔥 ${n}일 연속 출석 중` : '오늘부터 출석을 시작해 보세요'),
