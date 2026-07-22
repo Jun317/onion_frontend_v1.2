@@ -1,4 +1,4 @@
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 import { ChartCard } from '@/components/charts/ChartCard';
 import { TableCard } from '@/components/charts/TableCard';
@@ -17,6 +17,7 @@ interface Props {
   onRetry: () => void;
   width: number;
   bottomInset: number; // 하단 고정 바 높이만큼 스크롤 여백
+  snapStyle?: ViewStyle; // 웹 가로 스냅(자식 스냅 정지) — 가로 페이저에서 주입
 }
 
 /** kind 별 시각자료 라우팅 — chart(원본형)·table·timeline */
@@ -32,19 +33,19 @@ function VisualBlock({ visual, width }: { visual: Visual; width: number }) {
  * Modal 중첩(상세 시트 + 용어 시트)이 Android 에서 화면 프리즈를 일으켜 구조 자체를 바꿈.
  * 섹션 순서: 배지+제목 → 무슨 일 → 그래서 → 알아두면 좋아요 → 시각자료 → 면책.
  */
-export function DetailPane({ card, detail, error, onRetry, width, bottomInset }: Props) {
+export function DetailPane({ card, detail, error, onRetry, width, bottomInset, snapStyle }: Props) {
   const { theme } = useTheme();
 
   if (error && !detail) {
     return (
-      <View style={[styles.fill, { width }]}>
+      <View style={[styles.fill, { width }, snapStyle]}>
         <ErrorView message={copy.detailError} onRetry={onRetry} />
       </View>
     );
   }
   if (!detail) {
     return (
-      <View style={[styles.fill, styles.loading, { width }]}>
+      <View style={[styles.fill, styles.loading, { width }, snapStyle]}>
         <ActivityIndicator color={theme.textMuted} />
         <Text style={[styles.loadingText, { color: theme.textMuted }]}>{copy.detailLoading}</Text>
       </View>
@@ -61,7 +62,7 @@ export function DetailPane({ card, detail, error, onRetry, width, bottomInset }:
 
   return (
     <ScrollView
-      style={{ width }}
+      style={[{ width }, snapStyle]}
       contentContainerStyle={[styles.content, { paddingBottom: bottomInset + spacing.lg }]}
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled>

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   FlatList,
   Platform,
@@ -31,14 +31,18 @@ const NAV_COOLDOWN_MS = 550;
 /** 이슈 수가 이보다 많으면 세그먼트 대신 연속 진행 바로 폴백 */
 const MAX_SEGMENTS = 20;
 
-// react-native-web 전용 CSS 스크롤 스냅 — 브라우저가 한 스와이프/휠에 이슈 한 개씩 스냅하도록.
-// (RN 의 snapToInterval·disableIntervalMomentum 은 웹에서 네이티브처럼 동작하지 않음)
+// react-native-web 전용 CSS 스크롤 스냅 — 브라우저(모바일 Safari 포함)가 한 스와이프에
+// 이슈 한 개씩 스냅하도록. 웹에선 이 CSS 만 사용하고 RN JS 페이징 props 는 끈다(경합 방지).
+// scrollBehavior:auto → 초기 위치 설정 시 애니메이션(촤라락) 없이 즉시 이동.
 const WEB_SNAP_CONTAINER =
-  Platform.OS === 'web' ? ({ scrollSnapType: 'y mandatory' } as unknown as ViewStyle) : undefined;
+  Platform.OS === 'web'
+    ? ({ scrollSnapType: 'y mandatory', scrollBehavior: 'auto' } as unknown as ViewStyle)
+    : undefined;
 const WEB_SNAP_CHILD =
   Platform.OS === 'web'
     ? ({ scrollSnapAlign: 'start', scrollSnapStop: 'always' } as unknown as ViewStyle)
     : undefined;
+const IS_WEB = Platform.OS === 'web';
 
 /** 스토리형 진행 표시 — 지난 = accent-soft · 현재 = accent · 이후 = hairline */
 function ProgressSegments({ active, total }: { active: number; total: number }) {
@@ -104,6 +108,20 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
     if (id) markRead(id);
   }, [activeIndex, issues, markRead]);
 
+  // 웹: 초기 위치를 페인트 전에 확정 → 탭한 이슈에서 바로 시작, 이동 애니메이션("촤라락") 없음.
+  // react-native-web 은 initialScrollIndex 를 화면 스크롤에 반영하지 않으므로, 스크롤 DOM 노드의
+  // scrollTop 을 직접 설정한다. getItemLayout 으로 콘텐츠 전체 높이가 잡혀 오프셋이 정확하다.
+  useLayoutEffect(() => {
+    if (!IS_WEB || !size || didInitialScroll.current) return;
+    const target = Math.min(initialIndex, issues.length - 1);
+    didInitialScroll.current = true;
+    if (target <= 0) return;
+    const offset = target * size.height;
+    const node = listRef.current?.getScrollableNode?.() as { scrollTop?: number } | null;
+    if (node && typeof node.scrollTop === 'number') node.scrollTop = offset;
+    else listRef.current?.scrollToOffset({ offset, animated: false });
+  }, [size, initialIndex, issues.length]);
+
   const dismissHint = useCallback(() => {
     setShowHint(false);
     writeCache(cacheKeys.hintSeen, true);
@@ -158,10 +176,12 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
             </View>
           )}
           style={WEB_SNAP_CONTAINER}
-          pagingEnabled
+          // 네이티브: RN JS 페이징 스냅. 웹: 위 CSS 스냅만 사용하고 JS 페이징 props 는 끈다
+          // (둘이 겹치면 모바일 Safari 에서 한 스와이프가 중간에 멈추는 등 경합이 생김).
+          pagingEnabled={!IS_WEB}
           decelerationRate="fast"
-          snapToInterval={size.height}
-          disableIntervalMomentum
+          snapToInterval={IS_WEB ? undefined : size.height}
+          disableIntervalMomentum={!IS_WEB}
           showsVerticalScrollIndicator={false}
           scrollEnabled={!verticalLocked}
           initialScrollIndex={Math.min(initialIndex, issues.length - 1)}
@@ -170,16 +190,6 @@ export function IssuePager({ issues, initialIndex, onClose }: Props) {
             offset: size.height * index,
             index,
           })}
-          // react-native-web 는 initialScrollIndex 를 무시한다 → 콘텐츠 크기 확정 시점에
-          // 탭한 이슈 위치로 1회 명령형 스크롤(웹). getItemLayout 덕에 오프셋 계산이 정확.
-          onContentSizeChange={() => {
-            if (Platform.OS !== 'web' || didInitialScroll.current) return;
-            const target = Math.min(initialIndex, issues.length - 1);
-            didInitialScroll.current = true;
-            if (target > 0) {
-              listRef.current?.scrollToOffset({ offset: target * size.height, animated: false });
-            }
-          }}
           windowSize={3}
           maxToRenderPerBatch={2}
           onViewableItemsChanged={onViewableItemsChanged}

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,6 +9,7 @@ import {
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,6 +26,13 @@ import { cardShadow, categoryColor, font, radius, spacing, tint, typography, use
 import { formatNumber, relativeTime } from '@/utils/format';
 
 import { DetailPane } from './DetailPane';
+
+// 웹(모바일 Safari 포함) 가로 페이저 자식이 한 번에 한 페이지로 스냅되도록 —
+// 스냅 지점 사이에서 멈추는(가운데 정지) 문제 방지. 네이티브는 pagingEnabled 가 처리.
+const WEB_HSNAP_CHILD =
+  Platform.OS === 'web'
+    ? ({ scrollSnapAlign: 'start', scrollSnapStop: 'always' } as unknown as ViewStyle)
+    : undefined;
 
 /**
  * headline_stat 부재 시 상세 anchors[0] 로 파생하는 폴백 스탯.
@@ -122,12 +131,9 @@ export function IssuePage({
         scrollEventThrottle={32}
         onMomentumScrollEnd={syncPage}
         nestedScrollEnabled>
-        {/* ① 히어로 — 블록 사이를 유연 간격으로 벌려 하단 공백 제거 */}
-        <ScrollView
-          style={{ width }}
-          contentContainerStyle={[styles.heroContent, { minHeight: height - bottomBarHeight }]}
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled>
+        {/* ① 히어로 — 한 화면에 꽉 맞춘 요약(내부 세로 스크롤 없음 → 세로 제스처는 항상 다음 이슈).
+            넘치는 전체 내용은 옆으로 넘기는 상세 페인에. flexGap 스페이서가 남는 공간을 분배. */}
+        <View style={[styles.heroPage, { width, height: height - bottomBarHeight }, WEB_HSNAP_CHILD]}>
           <View style={styles.topRow}>
             <CategoryBadge category={card.category} size="md" />
             <View style={styles.timeCol}>
@@ -148,6 +154,7 @@ export function IssuePage({
             <GlossaryText
               text={card.one_liner}
               glossary={glossary}
+              numberOfLines={2}
               style={[styles.oneLiner, { color: theme.textSecondary }]}
             />
           )}
@@ -176,6 +183,7 @@ export function IssuePage({
               <GlossaryText
                 text={whyNow}
                 glossary={glossary}
+                numberOfLines={3}
                 style={[typography.body, { color: theme.textSecondary }]}
               />
             </Card>
@@ -187,11 +195,12 @@ export function IssuePage({
               <GlossaryText
                 text={impactLine}
                 glossary={glossary}
+                numberOfLines={3}
                 style={[styles.impactText, { color: theme.text }]}
               />
             </Card>
           )}
-        </ScrollView>
+        </View>
 
         {/* ② 상세 — 같은 배경 위 비모달 페인 */}
         <DetailPane
@@ -201,6 +210,7 @@ export function IssuePage({
           onRetry={retry}
           width={width}
           bottomInset={bottomBarHeight}
+          snapStyle={WEB_HSNAP_CHILD}
         />
       </ScrollView>
 
@@ -251,14 +261,16 @@ export function IssuePage({
 const styles = StyleSheet.create({
   page: { overflow: 'hidden' },
   // paddingTop 48 = 페이저 상단 오버레이(진행 세그먼트+닫기)와 겹침 방지.
+  // 한 화면 고정 높이 + overflow hidden → 내부 세로 스크롤 없이 요약이 한 화면에 안착.
   // flexGap 스페이서가 남는 세로 공간을 블록 사이에 배분 — 하단 공백 대신 호흡으로.
-  heroContent: {
+  heroPage: {
     paddingHorizontal: spacing.md,
     paddingTop: 48,
     paddingBottom: spacing.sm,
     gap: spacing.md,
+    overflow: 'hidden',
   },
-  flexGap: { flexGrow: 1, minHeight: 2 },
+  flexGap: { flexGrow: 1, flexShrink: 1, minHeight: 2 },
   topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   timeCol: { alignItems: 'flex-end', gap: 1, flexShrink: 1, marginLeft: spacing.sm },
   time: { ...typography.caption },
